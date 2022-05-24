@@ -1,0 +1,31 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: distributor frontend ci-cd auto sync with gtihub action
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  docker-push:
+    runs-on: ubuntu-20.04
+
+    # set the project name
+    env:
+      project_name: distributor-frontend
+
+    steps:
+    # clone the repo
+    - uses: actions/checkout@v2
+    # setup docker-compose
+    - uses: KengoTODA/actions-setup-docker-compose@main
+      with:
+        version: '1.26.2'
+    # push it to docker hub
+    - run: |
+        docker-compose up -d --build --remove-orphans -V
+        docker commit $(docker ps -a -q --filter ancestor=${{ env.project_name }} --format="{{.ID}}") ${{secrets.DOCKER_USERNAME}}/${{ env.project_name }}
+        docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASS}}
+        docker push ${{secrets.DOCKER_USERNAME}}/${{ env.project_name }}
+
