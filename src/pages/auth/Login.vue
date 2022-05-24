@@ -98,8 +98,8 @@ export default class Index extends Vue {
 	tipsDialog: boolean = false
 
 	login: LoginInterface = {
-		email: 'm@gmail.com',
-		password: '123456',
+		email: '',
+		password: '',
 		isRemembered: true
 	}
 
@@ -166,7 +166,7 @@ export default class Index extends Vue {
 		this.$axios.post('user/registration', this.registration).then(async (response) => {
 			if (!(response instanceof Error)) {
 				if (response.status > 199 && response.status < 300) {
-					const loginResponse = response.data as AxiosResponseInterface
+					// const loginResponse = response.data as AxiosResponseInterface
 					await this.$router.replace({name: 'dashboard'}).catch(e => e)
 					this.$q.notify({
 						message: `Registration Success`,

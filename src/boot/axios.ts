@@ -1,8 +1,7 @@
-import axios, {AxiosInstance} from 'axios';
-import {boot} from 'quasar/wrappers';
-import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
-import {Notify} from "quasar";
-import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
+import axios, { AxiosInstance } from 'axios';
+import { boot } from 'quasar/wrappers';
+import { ResponseStatusEnum } from "src/customs/enum/response-status.enum";
+import { Notify } from "quasar";
 
 declare module 'vue/types/vue' {
 	interface Vue {
@@ -10,7 +9,8 @@ declare module 'vue/types/vue' {
 	}
 }
 const Axios = axios.create({
-	baseURL: 'http://localhost:8989/api/v1',
+	// baseURL: 'http://localhost:8989/api/v1',
+	baseURL: 'https://api.distributor.shakotracker.com/api/v1',
 	headers: {
 		'key' : 'AIzaSyBaIfequKgNU79QbEmM8iJ45zxP0SrEReo'
 	}
