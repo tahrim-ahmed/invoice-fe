@@ -505,7 +505,7 @@ interface AddMoreInterface {
 	discount: number
 }
 
-@Component({components: {DatePickerComponent})
+@Component({components: {DatePickerComponent}})
 export default class List extends Vue {
 	tab = 'info'
 	detailsTab = 'client'
