@@ -35,11 +35,11 @@
 							<q-tr :props="props">
 
 								<q-td class="q-px-sm cursor-pointer">
-									{{ $helper.convertDate(props.row.createdAt) }}
+									{{ $helper.convertDate(props.row.orderDate) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer">
-									{{ props.row.invoiceNo }}
+									{{ $helper.convertDate(props.row.shippingDate) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer">
@@ -63,8 +63,8 @@
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas(Number(props.row.totalMRP) - Number(Number(props.row.totalTP) +
-										Number(props.row.totalCommission) + Number(props.row.others))) }}
+									{{ $helper.numberWithCommas((Number(props.row.totalMRP) - Number(Number(props.row.totalTP) +
+										Number(props.row.totalCommission) + Number(props.row.others))).toFixed(2)) }}
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
@@ -146,10 +146,22 @@
 									<q-form greedy @submit.prevent="saveInvoice">
 										<q-card-section>
 											<div class="row q-col-gutter-md">
-												<div class="col-12 col-md-12 q-pt-md">
+												<div class="col-12 col-md-6">
+													<date-picker-component v-model="invoice.orderDate" :dense="false"
+													                       :rules="[$helper.rules.required]"
+													                       class="col col-6" dense hide-bottom-space
+													                       label="Order Date"/>
+												</div>
+												<div class="col-12 col-md-6">
+													<date-picker-component v-model="invoice.shippingDate" :dense="false"
+													                       :rules="[$helper.rules.required]"
+													                       class="col col-6" dense hide-bottom-space
+													                       label="Shipping Date"/>
+												</div>
+												<div class="col-12 col-md-12">
 													<q-select v-model="invoice.clientID" :options="clientOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Client" map-options option-label="name"
-													          option-value="id" emit-value
+													          option-value="id" emit-value hide-bottom-space
 													          use-input @filter="filterClientFn" outlined dense>
 														<template v-slot:no-option>
 															<q-item>
@@ -171,10 +183,10 @@
 
 													</q-select>
 												</div>
-												<div class="col-12 col-md-12 q-pt-md">
+												<div class="col-12 col-md-12">
 												<q-select v-model="addMore.product" :options="productOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Product" map-options option-label="name"
-													          use-input @filter="filterProductFn" outlined dense>
+													          use-input @filter="filterProductFn" outlined dense hide-bottom-space>
 														<template v-slot:no-option>
 															<q-item>
 																<q-item-section class="text-grey">
@@ -186,16 +198,17 @@
 													</q-select>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
-													<q-input v-model="addMore.unitTP" label="Unit TP" outlined dense/>
+													<q-input v-model="addMore.unitTP" label="Unit TP" outlined dense hide-bottom-space/>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
-													<q-input v-model="addMore.unitMRP" label="Unit MRP" outlined dense/>
+													<q-input v-model.number="addMore.unitMRP" type="number" label="Unit MRP" outlined dense
+													         hide-bottom-space/>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
-													<q-input v-model="addMore.quantity" label="Quantity" outlined dense/>
+													<q-input v-model.number="addMore.quantity" type="number" label="Quantity" outlined dense hide-bottom-space/>
 												</div>
 												<div class="col-12 col-md-9 q-pt-md">
-													<q-input v-model="addMore.discount" label="Discount %" outlined dense/>
+													<q-input v-model.number="addMore.discount" type="number" label="Discount %" outlined dense hide-bottom-space/>
 												</div>
 												<div class="col-md-3 q-pt-md">
 													<q-btn class="full-width" label="Add Que" color="primary" @click="addToQueue" no-caps/>
@@ -205,7 +218,7 @@
 													          input-debounce="1000" label="Select Platform" outlined dense @change="calculateTotal"/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
-													<q-input v-model="invoice.others" label="Others Cost" outlined dense/>
+													<q-input v-model.number="invoice.others" type="number" label="Others Cost" outlined dense hide-bottom-space/>
 												</div>
 											</div>
 											<div class="row justify-end q-pt-md">
@@ -458,8 +471,8 @@
 											</td>
 											<td class="text-bold">৳
 												{{
-													$helper.numberWithCommas(Number(invoiceDetails.totalMRP) - Number(Number(invoiceDetails.totalTP) + Number(invoiceDetails.totalCommission) +
-															Number(invoiceDetails.others)))
+													$helper.numberWithCommas((Number(invoiceDetails.totalMRP) - Number(Number(invoiceDetails.totalTP) + Number(invoiceDetails.totalCommission) +
+															Number(invoiceDetails.others))).toFixed(2))
 												}}
 											</td>
 										</tr>
@@ -480,8 +493,8 @@ import {Component, Vue, Watch} from 'vue-property-decorator';
 import {Loading, QSpinnerClock} from "quasar";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
-import {InvoiceInterface} from "../../customs/interfaces/invoice.interface";
-import {ProductInterface} from "../../customs/interfaces/product.interface";
+import {InvoiceInterface} from "src/customs/interfaces/invoice.interface";
+import {ProductInterface} from "src/customs/interfaces/product.interface";
 
 interface AddMoreInterface {
 	product: ProductInterface,
@@ -491,7 +504,11 @@ interface AddMoreInterface {
 	discount: number
 }
 
-@Component({})
+@Component({
+	components: {
+		DatePickerComponent: () => import('components/date-picker/date-picker.component.vue'),
+	}
+})
 
 export default class List extends Vue {
 	tab = 'info'
@@ -514,15 +531,15 @@ export default class List extends Vue {
 	filter: string = ''
 	columns: any = [
 		{
-			label: 'Invoice Date',
-			name: 'createdAt',
-			field: 'createdAt',
+			label: 'Order Date',
+			name: 'orderDate',
+			field: 'orderDate',
 			align: 'left',
 			sortable: true,
 		},{
-			label: 'Invoice No',
-			name: 'invoiceNo',
-			field: 'invoiceNo',
+			label: 'Shipping Date',
+			name: 'shippingDate',
+			field: 'shippingDate',
 			align: 'left',
 			sortable: true
 		},{
@@ -571,6 +588,8 @@ export default class List extends Vue {
 	addDialog: boolean = false;
 	invoice: InvoiceInterface = {
 		clientID: '',
+		orderDate: new Date().toISOString(),
+		shippingDate: new Date().toISOString(),
 		totalTP: 0,
 		totalMRP: 0,
 		totalCommission: 0,
@@ -810,7 +829,8 @@ export default class List extends Vue {
 				const res = response.data as AxiosResponseInterface
 				if (res.status === ResponseStatusEnum.SUCCESS) {
 					update(() => {
-						this.productOptions = res?.page?.data || []
+						const products = res?.page?.data || [];
+						this.productOptions = products.filter((f: any) => !this.preservedProducts.map(r => r.product.id).includes(f.id))
 					})
 				}
 			}

@@ -8,6 +8,8 @@ interface invoiceDetailsInterface {
 
 export interface InvoiceInterface {
 	id?: string
+	orderDate: Date | string
+	shippingDate: Date | string
 	clientID: string
 	totalTP: number
 	totalMRP: number
