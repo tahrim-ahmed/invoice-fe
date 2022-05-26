@@ -495,7 +495,7 @@ import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.inte
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {InvoiceInterface} from "src/customs/interfaces/invoice.interface";
 import {ProductInterface} from "src/customs/interfaces/product.interface";
-import DatePickerComponent from "src/components/date-picker/date-picker.component";
+import DatePickerComponent from "src/components/date-picker/Date-picker.component";
 
 interface AddMoreInterface {
 	product: ProductInterface,
