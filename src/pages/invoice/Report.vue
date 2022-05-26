@@ -506,7 +506,7 @@ interface AddMoreInterface {
 
 @Component({
 	components: {
-		DatePickerComponent: () => import('components/date-picker/date-picker.component.vue'),
+		DatePickerComponent: () => import('../../../components/date-picker/date-picker.component.vue'),
 	}
 })
 
