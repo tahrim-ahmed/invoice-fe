@@ -30,6 +30,60 @@
 								{{ props.col.label }}
 							</q-th>
 						</template>
+
+						<template v-slot:body="props">
+							<q-tr :props="props">
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.name }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.packSize }}
+								</q-td>
+
+								<q-td class="q-px-sm text-center">
+									<q-icon class="cursor-pointer" color="dark" name="view_module" size="sm">
+										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate">
+											<q-list style="min-width: 100px">
+												<q-item clickable dense v-close-popup @click="openUpdateDialog(props.row)">
+													<q-item-section side>
+														<q-icon color="secondary" name="edit" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<q-item-label style="font-size: 15px">Update</q-item-label>
+													</q-item-section>
+												</q-item>
+												<q-separator/>
+												<q-item clickable dense>
+													<q-item-section side>
+														<q-icon color="negative" name="delete_forever" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<div>Delete</div>
+														<q-popup-proxy :breakpoint="700">
+															<q-banner dense>
+																<template v-slot:avatar>
+																	<q-icon color="negative" name="delete_forever"/>
+																</template>
+																Would you really like to delete product
+																<span class="text-bold text-negative">
+																{{ props.row.name }}
+																</span> for forever?
+																<template v-slot:action>
+																	<q-btn color="negative" glossy @click="remove(props.row.id)" v-close-popup> Yes</q-btn>
+																	<q-btn v-close-popup color="secondary" glossy> No</q-btn>
+																</template>
+															</q-banner>
+														</q-popup-proxy>
+													</q-item-section>
+												</q-item>
+											</q-list>
+										</q-menu>
+									</q-icon>
+								</q-td>
+							</q-tr>
+						</template>
 					</q-table>
 
 					<!--	Add Product  -->
@@ -71,12 +125,12 @@
 						<q-card>
 							<q-bar class="bg-primary text-white">
 								<q-space />
-								<q-btn dense flat icon="close" @click="closeAddDialog">
+								<q-btn dense flat icon="close" @click="closeUpdateDialog">
 									<q-tooltip>Close</q-tooltip>
 								</q-btn>
 							</q-bar>
 							<q-tabs class="q-pt-none" v-model="tab" dense active-color="primary">
-								<q-tab name="info" label="Update Client Info"/>
+								<q-tab name="info" label="Update Product Info"/>
 							</q-tabs>
 							<q-tab-panels v-model="tab" class="bg-grey-1" animated>
 								<q-tab-panel name="info">
@@ -108,17 +162,13 @@
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
 import {Loading, QSpinnerClock} from "quasar";
-import {ProductInterface} from "../../customs/interfaces/product.interface";
-import {ResponseStatusEnum} from "../../customs/enum/response-status.enum";
-import {AxiosResponseInterface} from "../../customs/interfaces/axios-response.interface";
+import {ProductInterface} from "src/customs/interfaces/product.interface";
+import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
+import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
 
 @Component({})
 export default class Products extends Vue {
 	tab = 'info'
-
-	imageSource = ''
-
-	image: File = null
 
 	/***************** table ****************/
 	rows: any = [];
@@ -179,6 +229,12 @@ export default class Products extends Vue {
 		})
 	}
 
+	openUpdateDialog(product: any) {
+		this.updateProduct.id = product.id;
+		this.updateProduct.name = product.name;
+		this.updateProduct.packSize = product.packSize;
+		this.updateDialog = true;
+	}
 
 	onRequest({pagination}: any = {}) {
 		if (pagination) {
@@ -209,10 +265,6 @@ export default class Products extends Vue {
 		})
 	}
 
-	setImage() {
-		this.imageSource = this.image ? URL.createObjectURL(this.image) : ''
-	}
-
 	saveProduct() {
 		//@ts-ignore
 		Loading.show({spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey'})
@@ -238,10 +290,18 @@ export default class Products extends Vue {
 
 	}
 
+	closeUpdateDialog() {
+		this.updateDialog = false;
+		this.updateProduct.id = ''
+		this.updateProduct.name = ''
+		this.updateProduct.packSize = ''
+
+	}
+
 	saveUpdate() {
 		this.$axios.put('products/save/'+this.updateProduct.id, {
 			product: this.updateProduct
-		}).then(value => {
+		}).then(() => {
 			this.$q.notify({
 				message: 'Product Edit Success!',
 				type: 'positive'
@@ -250,6 +310,10 @@ export default class Products extends Vue {
 			Loading.hide()
 			this.updateDialog = false
 		})
+	}
+
+	remove(id: any) {
+		console.log(id);
 	}
 }
 </script>
