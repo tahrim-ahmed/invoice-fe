@@ -201,7 +201,7 @@
 													<q-input v-model="addMore.unitTP" label="Unit TP" outlined dense hide-bottom-space/>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
-													<q-input v-model.number="addMore.unitMRP" type="number" label="Unit MRP" outlined dense
+													<q-input v-model.number="addMore.unitMRP" type="number" label="Unit Selling Price" outlined dense
 													         hide-bottom-space/>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
@@ -235,6 +235,10 @@
 									Date: {{invDate}} <br>
 									Client: {{currentClient.name}}
 								</div>
+								<div class="col-12 col-md-6 text-bold">
+									Order Date: {{ $helper.convertDate(invoice.orderDate) }} <br>
+									Shipping Date: {{ $helper.convertDate(invoice.shippingDate) }}
+								</div>
 							</div>
 							<div class="q-ma-md">
 								<q-markup-table v-if="preservedProducts.length" bordered dense flat separator="cell" wrap-cells>
@@ -247,7 +251,7 @@
 										<th>Pack Size</th>
 										<th>Quantity</th>
 										<th>Unit TP</th>
-										<th>Unit MRP</th>
+										<th>Unit SP</th>
 										<th>Dis %</th>
 										<th>Dis Amount</th>
 										<th>Total</th>
