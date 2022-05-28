@@ -63,8 +63,7 @@
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas((Number(props.row.totalMRP) - Number(Number(props.row.totalTP) +
-										Number(props.row.totalCommission) + Number(props.row.others))).toFixed(2)) }}
+									{{ $helper.numberWithCommas((Number(props.row.totalProfit).toFixed(2))) }}
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
@@ -469,14 +468,12 @@
 										</tr>
 										<tr>
 											<td class="text-right text-bold" colspan="7">
-												{{ Number(invoiceDetails.totalMRP) - Number(Number(invoiceDetails.totalTP) + Number(invoiceDetails.totalCommission) +
-													Number(invoiceDetails.others)) >= 0 ?
+												{{ Number(invoiceDetails.totalProfit) >= 0 ?
 													'Profit' : 'Loss' }}
 											</td>
 											<td class="text-bold">৳
 												{{
-													$helper.numberWithCommas((Number(invoiceDetails.totalMRP) - Number(Number(invoiceDetails.totalTP) + Number(invoiceDetails.totalCommission) +
-															Number(invoiceDetails.others))).toFixed(2))
+													$helper.numberWithCommas((Number(invoiceDetails.totalProfit).toFixed(2)))
 												}}
 											</td>
 										</tr>
