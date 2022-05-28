@@ -495,7 +495,7 @@ import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.inte
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {InvoiceInterface} from "src/customs/interfaces/invoice.interface";
 import {ProductInterface} from "src/customs/interfaces/product.interface";
-import DatePickerComponent from "src/components/date-picker/Date-picker.component";
+import DatePickerComponent from "src/components/date-picker/Date-picker.component.vue";
 
 interface AddMoreInterface {
 	product: ProductInterface,
@@ -505,7 +505,7 @@ interface AddMoreInterface {
 	discount: number
 }
 
-@Component({components: {DatePickerComponent})
+@Component({components: {DatePickerComponent}})
 export default class List extends Vue {
 	tab = 'info'
 	detailsTab = 'client'
