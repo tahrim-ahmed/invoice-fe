@@ -26,7 +26,12 @@ const routes: RouteConfig[] = [
 				component: () => import('pages/products/Products.vue')
 			},
 			{
-				path: 'report',
+				path: 'purchase',
+				name: 'purchase',
+				component: () => import('pages/purchase/Purchase.vue')
+			},
+			{
+				path: 'invoice',
 				name: 'report',
 				component: () => import('pages/invoice/Report.vue')
 			},

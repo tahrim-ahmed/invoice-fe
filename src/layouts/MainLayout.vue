@@ -95,7 +95,7 @@
 					<q-item-section>Products</q-item-section>
 				</q-item>
 				<q-separator/>
-				<q-item clickable v-ripple :to="{name: 'products'}">
+				<q-item clickable v-ripple :to="{name: 'purchase'}">
 					<q-item-section avatar>
 						<q-icon color="primary" name="shopping_bag" />
 					</q-item-section>
