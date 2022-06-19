@@ -118,6 +118,13 @@
 					<q-item-section>Invoice</q-item-section>
 				</q-item>
 				<q-separator/>
+				<q-item clickable v-ripple :to="{name: 'report'}">
+					<q-item-section avatar>
+						<q-icon color="primary" name="account_balance" />
+					</q-item-section>
+					<q-item-section>Account Statement</q-item-section>
+				</q-item>
+				<q-separator/>
 
 				<q-expansion-item expand-separator :content-inset-level="0.5" class="text-primary" icon="engineering" label="Settings">
 
@@ -126,13 +133,6 @@
 							<q-icon color="primary" name="groups" />
 						</q-item-section>
 						<q-item-section>Groups</q-item-section>
-					</q-item>
-					<q-separator/>
-					<q-item clickable v-ripple :to="{name: 'permission'}">
-						<q-item-section avatar>
-							<q-icon color="primary" name="admin_panel_settings" />
-						</q-item-section>
-						<q-item-section>Permission</q-item-section>
 					</q-item>
 					<q-separator/>
 					<q-item clickable v-ripple :to="{name: 'users'}">

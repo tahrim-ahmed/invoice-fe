@@ -5,7 +5,7 @@
 				<div class="col-12 q-px-md q-pt-md">
 					<q-table :columns="columns" :data="rows" :loading="isLoading" :pagination.sync="pagination"
 					         :style="'max-height: 88.5vh'" binary-state-sort card-class="full-width bg-card-theme"
-					         row-key="id" wrap-cells>
+					         row-key="id" wrap-cells @request="onRequest">
 						<template v-slot:no-data="{ icon, message, filter }">
 							<div class="text-overline full-width row justify-center q-py-xl">
 								<q-icon :name="filter ? 'filter_b_and_w' : icon" class="col-1" color="warning" size="2em"/>
