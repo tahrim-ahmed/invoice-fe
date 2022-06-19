@@ -1,5 +1,5 @@
 export interface ClientInterface {
-	_id?: string,
+	id?: string,
 	code: string,
 	name: string,
 	email: string,

@@ -30,6 +30,76 @@
 								{{ props.col.label }}
 							</q-th>
 						</template>
+
+						<template v-slot:body="props">
+							<q-tr :props="props">
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.code }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.name }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.cell }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.email }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.billing }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.shipping }}
+								</q-td>
+
+								<q-td class="q-px-sm text-center">
+									<q-icon class="cursor-pointer" color="dark" name="view_module" size="sm">
+										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate">
+											<q-list style="min-width: 100px">
+												<q-item clickable dense v-close-popup @click="openUpdateDialog(props.row)">
+													<q-item-section side>
+														<q-icon color="secondary" name="edit" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<q-item-label style="font-size: 15px">Edit</q-item-label>
+													</q-item-section>
+												</q-item>
+												<q-separator/>
+												<q-item clickable dense>
+													<q-item-section side>
+														<q-icon color="negative" name="delete_forever" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<div>Delete</div>
+														<q-popup-proxy :breakpoint="700">
+															<q-banner dense>
+																<template v-slot:avatar>
+																	<q-icon color="negative" name="delete_forever"/>
+																</template>
+																Would you really like to delete client
+																<span class="text-bold text-negative">
+																{{props.row.name}}
+																</span> for forever?
+																<template v-slot:action>
+																	<q-btn color="negative" glossy @click="remove(props.row.id)" v-close-popup> Yes</q-btn>
+																	<q-btn v-close-popup color="secondary" glossy> No</q-btn>
+																</template>
+															</q-banner>
+														</q-popup-proxy>
+													</q-item-section>
+												</q-item>
+											</q-list>
+										</q-menu>
+									</q-icon>
+								</q-td>
+							</q-tr>
+						</template>
 					</q-table>
 
 					<!--	Add Client  -->
@@ -46,13 +116,6 @@
 							</q-tabs>
 							<q-tab-panels v-model="tab" class="bg-grey-1" animated>
 								<q-tab-panel name="info">
-									<div v-if="imageSource !== ''" class="row justify-center">
-										<div class="col-12 col-md-4 text-center q-pt-md">
-											<q-avatar size="150px" square>
-												<q-img :ratio="1" :src="imageSource" width="300px" contain/>
-											</q-avatar>
-										</div>
-									</div>
 									<q-form greedy @submit.prevent="saveClient">
 										<q-card-section>
 											<div class="row q-col-gutter-md">
@@ -74,15 +137,6 @@
 												<div class="col-12 col-md-6 q-pt-md">
 													<q-input v-model="client.shipping" label="Shipping Address" outlined dense/>
 												</div>
-<!--												<div class="col-12 col-md-grow q-pt-md">
-													<q-file v-model="image" accept=".jpg, image/*" clearable counter
-													        label="Client Image"
-													        @clear="setImage" @input="setImage" dense outlined>
-														<template v-slot:prepend>
-															<q-icon name="attach_file"/>
-														</template>
-													</q-file>
-												</div>-->
 											</div>
 											<div class="row justify-end q-pt-md">
 												<q-btn color="primary" label="Save" type="submit"/>
@@ -99,7 +153,7 @@
 						<q-card>
 							<q-bar class="bg-primary text-white">
 								<q-space />
-								<q-btn dense flat icon="close" @click="closeAddDialog">
+								<q-btn dense flat icon="close" @click="closeUpdateDialog">
 									<q-tooltip>Close</q-tooltip>
 								</q-btn>
 							</q-bar>
@@ -108,13 +162,6 @@
 							</q-tabs>
 							<q-tab-panels v-model="tab" class="bg-grey-1" animated>
 								<q-tab-panel name="info">
-									<div v-if="imageSource !== ''" class="row justify-center">
-										<div class="col-12 col-md-4 text-center q-pt-md">
-											<q-avatar size="150px" square>
-												<q-img :ratio="1" :src="imageSource" width="300px" contain/>
-											</q-avatar>
-										</div>
-									</div>
 									<q-form greedy @submit.prevent="saveUpdate">
 										<q-card-section>
 											<div class="row q-col-gutter-md">
@@ -136,18 +183,9 @@
 												<div class="col-12 col-md-6 q-pt-md">
 													<q-input v-model="updateClient.shipping" label="Shipping Address" outlined dense/>
 												</div>
-												<div class="col-12 col-md-grow q-pt-md">
-													<q-file v-model="image" accept=".jpg, image/*" clearable counter
-													        label="Client Image"
-													        @clear="setImage" @input="setImage" dense outlined>
-														<template v-slot:prepend>
-															<q-icon name="attach_file"/>
-														</template>
-													</q-file>
-												</div>
-												<div class="col-md-auto q-pt-md">
-													<q-btn class="full-width" label="Save" color="primary" type="submit" no-caps/>
-												</div>
+											</div>
+											<div class="row justify-end q-pt-md">
+												<q-btn color="primary" label="Update" type="submit"/>
 											</div>
 										</q-card-section>
 									</q-form>
@@ -163,18 +201,14 @@
 
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
-import {Loading, QSpinnerClock} from "quasar";
-import {ClientInterface} from "../../customs/interfaces/client.interface";
-import {AxiosResponseInterface} from "../../customs/interfaces/axios-response.interface";
-import {ResponseStatusEnum} from "../../customs/enum/response-status.enum";
+import {Loading, QSpinnerClock, QSpinnerDots, QSpinnerTail} from "quasar";
+import {ClientInterface} from "src/customs/interfaces/client.interface";
+import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
+import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 
 @Component({})
 export default class List extends Vue {
 	tab = 'info'
-
-	imageSource = ''
-
-	image: File = null
 
 	/***************** table ****************/
 	rows: any = [];
@@ -243,13 +277,24 @@ export default class List extends Vue {
 	/************* update ***************/
 	updateDialog: boolean = false;
 	updateClient: ClientInterface = {
-		_id: '',
+		id: '',
 		code: '',
 		name: '',
 		email: '',
 		billing: '',
 		shipping: '',
 		cell: '',
+	}
+
+	openUpdateDialog(client: any) {
+		this.updateClient.id = client.id;
+		this.updateClient.code = client.code;
+		this.updateClient.name = client.name;
+		this.updateClient.cell = client.cell;
+		this.updateClient.email = client.email;
+		this.updateClient.billing = client.billing;
+		this.updateClient.shipping = client.shipping;
+		this.updateDialog = true;
 	}
 
 	created() {
@@ -295,10 +340,6 @@ export default class List extends Vue {
 		})
 	}
 
-	setImage() {
-		this.imageSource = this.image ? URL.createObjectURL(this.image) : ''
-	}
-
 	saveClient() {
 		//@ts-ignore
 		Loading.show({spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey'})
@@ -325,20 +366,56 @@ export default class List extends Vue {
 		this.client.billing = ''
 		this.client.shipping = ''
 		this.client.email = ''
+	}
 
+	closeUpdateDialog() {
+		this.updateDialog = false
+		this.updateClient.id = ''
+		this.updateClient.code = ''
+		this.updateClient.name = ''
+		this.updateClient.cell = ''
+		this.updateClient.email = ''
+		this.updateClient.billing = ''
+		this.updateClient.shipping = ''
 	}
 
 	saveUpdate() {
-		this.$axios.put('clients/save/'+this.updateClient._id, {
-			client: this.updateClient
-		}).then(value => {
-			this.$q.notify({
-				message: 'Client Edit Success!',
-				type: 'positive'
-			})
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerDots, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/client/${this.updateClient.id}`
+		delete this.updateClient.id;
+		this.$axios.put(url, this.updateClient).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				this.$q.notify({
+					message: res.message,
+					type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+				})
+				this.onFilter()
+			}
+		}).finally(() => {
+			this.closeUpdateDialog();
+			Loading.hide()
+		})
+	}
+
+	remove(id: string) {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerTail, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/client/${id}`
+		this.$axios.delete(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				if (res.payload.data.isDeleted) {
+					this.$q.notify({
+						message: res.message,
+						type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+					})
+					this.onFilter();
+				}
+			}
 		}).finally(() => {
 			Loading.hide()
-			this.updateDialog = false
 		})
 	}
 }

@@ -161,7 +161,7 @@
 
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
-import {Loading, QSpinnerClock} from "quasar";
+import {Loading, QSpinnerClock, QSpinnerDots, QSpinnerTail} from "quasar";
 import {ProductInterface} from "src/customs/interfaces/product.interface";
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
@@ -295,25 +295,46 @@ export default class Products extends Vue {
 		this.updateProduct.id = ''
 		this.updateProduct.name = ''
 		this.updateProduct.packSize = ''
-
 	}
 
 	saveUpdate() {
-		this.$axios.put('products/save/'+this.updateProduct.id, {
-			product: this.updateProduct
-		}).then(() => {
-			this.$q.notify({
-				message: 'Product Edit Success!',
-				type: 'positive'
-			})
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerDots, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/product/${this.updateProduct.id}`
+		delete this.updateProduct.id;
+		this.$axios.put(url, this.updateProduct).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				this.$q.notify({
+					message: res.message,
+					type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+				})
+				this.onFilter()
+			}
 		}).finally(() => {
+			this.closeUpdateDialog();
 			Loading.hide()
-			this.updateDialog = false
 		})
 	}
 
-	remove(id: any) {
-		console.log(id);
+	remove(id: string) {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerTail, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/product/${id}`
+		this.$axios.delete(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				if (res.payload.data.isDeleted) {
+					this.$q.notify({
+						message: res.message,
+						type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+					})
+					this.onFilter();
+				}
+			}
+		}).finally(() => {
+			Loading.hide()
+		})
 	}
 }
 </script>
