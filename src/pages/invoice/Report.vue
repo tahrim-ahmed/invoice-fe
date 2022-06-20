@@ -593,6 +593,7 @@ export default class List extends Vue {
 		totalProfit: 0,
 		platform: '',
 		payment: '',
+		paymentType: '',
 		creditPeriod: null,
 		createInvoiceDetailsDto: []
 	}
@@ -782,7 +783,7 @@ export default class List extends Vue {
 		})
 
 		this.invoice.paymentType === 'Cash' ? this.invoice.payment = 'Paid' : this.invoice.payment = 'Unpaid'
-		
+
 		if (this.invoice.platform === 'Daraz') {
 			this.invoice.totalCommission = Number((12 * Number(this.invoice.totalMRP)) / 100)
 
