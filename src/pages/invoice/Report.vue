@@ -46,12 +46,8 @@
 									{{ props.row.client.code+' - '+props.row.client.name }}
 								</q-td>
 
-								<q-td class="q-px-sm cursor-pointer">
-									{{ props.row.client.cell }}
-								</q-td>
-
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas(props.row.totalTP) }}
+									{{ $helper.numberWithCommas(Number(Number(props.row.totalTP) + Number(props.row.others) + Number(props.row.totalCommission))) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
@@ -59,11 +55,15 @@
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas(props.row.totalCommission) }}
+									{{ $helper.numberWithCommas((Number(props.row.totalProfit).toFixed(2))) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas((Number(props.row.totalProfit).toFixed(2))) }}
+									{{ props.row.paymentType }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer text-bold">
+									{{ props.row.payment }}
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
@@ -388,10 +388,10 @@
 								<q-tab-panel name="product">
 									<div class="row">
 										<div class="col-6">
-											Invoice No: {{ invoiceDetails.invoiceID }} <br>
+											Order Date: {{ $helper.convertDate(invoiceDetails.orderDate) }} <br>
 										</div>
 										<div class="col-6">
-											Invoice Date: {{ $helper.convertDate(invoiceDetails.createdAt) }} <br>
+											Shipping Date: {{ $helper.convertDate(invoiceDetails.shippingDate) }} <br>
 										</div>
 									</div>
 									<q-markup-table dense class="q-mt-md">
@@ -430,6 +430,14 @@
 											</td>
 										</tr>
 										<tr>
+											<td class="text-right text-bold" colspan="7">Total MRP</td>
+											<td class="text-bold">৳
+												{{
+													$helper.numberWithCommas(invoiceDetails.totalMRP.toFixed(2))
+												}}
+											</td>
+										</tr>
+										<tr>
 											<td class="text-right text-bold" colspan="7">Total TP</td>
 											<td class="text-bold">৳
 												{{
@@ -455,14 +463,6 @@
 											<td class="text-bold">৳
 												{{
 													invoiceDetails.others > 0 ? $helper.numberWithCommas(invoiceDetails.others) : 0
-												}}
-											</td>
-										</tr>
-										<tr>
-											<td class="text-right text-bold" colspan="7">Total MRP</td>
-											<td class="text-bold">৳
-												{{
-													$helper.numberWithCommas(invoiceDetails.totalMRP.toFixed(2))
 												}}
 											</td>
 										</tr>
@@ -540,38 +540,37 @@ export default class List extends Vue {
 			align: 'left',
 			sortable: true
 		},{
-			label: 'Client Code',
+			label: 'Client',
 			name: 'clientName',
 			field: 'name',
 			align: 'left',
 			sortable: true
 		},{
-			label: 'Contact No',
-			name: 'contact',
-			field: 'cell',
+			label: 'Total Cost',
+			name: 'totalCost',
+			field: 'totalCost',
 			align: 'left',
 			sortable: true
 		},{
-			label: 'Total TP',
-			name: 'totalTP',
-			field: 'totalTP',
+			label: 'Total Sold',
+			name: 'totalSold',
+			field: 'totalSold',
 			align: 'left',
 			sortable: true
-		},{
-			label: 'Total MRP',
-			name: 'totalMRP',
-			field: 'totalMRP',
-			align: 'left',
-			sortable: true
-		},{
-			label: 'Commission',
-			name: 'totalCommission',
-			field: 'totalCommission',
-			align: 'left',
 		},{
 			label: 'Profit',
 			name: 'totalProfit',
 			field: 'totalProfit',
+			align: 'left',
+		},{
+			label: 'Type',
+			name: 'paymentType',
+			field: 'paymentType',
+			align: 'left',
+		},{
+			label: 'Payment',
+			name: 'payment',
+			field: 'payment',
 			align: 'left',
 		},{
 			label: 'Action',
@@ -593,6 +592,8 @@ export default class List extends Vue {
 		others: 0,
 		totalProfit: 0,
 		platform: '',
+		payment: '',
+		creditPeriod: null,
 		createInvoiceDetailsDto: []
 	}
 
@@ -621,13 +622,17 @@ export default class List extends Vue {
 				unitTP: 0,
 			}
 		],
-		invoiceID: '',
 		others: 0,
 		platform: '',
 		totalCommission: 0,
 		totalMRP: 0,
 		totalTP: 0,
 		totalProfit: 0,
+		orderDate: '',
+		shippingDate: '',
+		payment: '',
+		paymentType: '',
+		creditPeriod: ''
 	}
 
 	currentClient: any = {}
@@ -775,6 +780,9 @@ export default class List extends Vue {
 				discount: Number(m.discount),
 			}
 		})
+
+		this.invoice.paymentType === 'Cash' ? this.invoice.payment = 'Paid' : this.invoice.payment = 'Unpaid'
+		
 		if (this.invoice.platform === 'Daraz') {
 			this.invoice.totalCommission = Number((12 * Number(this.invoice.totalMRP)) / 100)
 
