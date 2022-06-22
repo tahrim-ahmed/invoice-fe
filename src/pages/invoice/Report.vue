@@ -17,6 +17,15 @@
 							<div class="q-table__control q-py-xs">
 								<q-btn color="primary" icon="add" label="Invoice" size="sm" @click="addDialog = true"/>
 							</div>
+							<q-btn color="primary" label="Select Range" class="q-ml-md q-my-xs col-md-3 col-3" size="sm" no-caps>
+								<q-menu v-model="show" anchor="bottom left" self="top left">
+									<q-date v-model="dates" range @input="show = false" minimal>
+										<div class="row justify-end q-pt-none q-mt-none">
+											<q-btn label="Clear" no-caps color="primary" size="sm" @click="resetSelection"/>
+										</div>
+									</q-date>
+								</q-menu>
+							</q-btn>
 							<q-space/>
 							<q-input v-model="filter" autogrow color="black" debounce="1000" dense label="Search">
 								<template v-slot:append>
@@ -63,7 +72,11 @@
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ props.row.payment }}
+									<q-chip dense :color="props.row.payment === 'Paid' ? 'positive' : 'negative'"
+									        text-color="black" class="text-bold"
+									        :icon="props.row.payment === 'Paid' ? 'price_check' : 'block'">
+										{{ props.row.payment }}
+									</q-chip>
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
@@ -76,6 +89,28 @@
 													</q-item-section>
 													<q-item-section>
 														<q-item-label style="font-size: 15px">Details</q-item-label>
+													</q-item-section>
+												</q-item>
+												<q-separator/>
+												<q-item v-if="props.row.payment !== 'Paid'" clickable dense>
+													<q-item-section side>
+														<q-icon color="info" name="local_atm" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<div>Paid</div>
+														<q-popup-proxy :breakpoint="700">
+															<q-banner dense>
+																<template v-slot:avatar>
+																	<q-icon color="info" name="local_atm"/>
+																</template>
+																Would you really like to mark this invoice as paid?
+																<template v-slot:action>
+																	<q-btn color="negative" glossy @click="paid(props.row.id)" v-close-popup> Yes
+																	</q-btn>
+																	<q-btn v-close-popup color="secondary" glossy> No</q-btn>
+																</template>
+															</q-banner>
+														</q-popup-proxy>
 													</q-item-section>
 												</q-item>
 												<q-separator/>
@@ -157,7 +192,7 @@
 													                       class="col col-6" dense hide-bottom-space
 													                       label="Shipping Date"/>
 												</div>
-												<div class="col-12 col-md-12">
+												<div class="col-12 col-md-6">
 													<q-select v-model="invoice.clientID" :options="clientOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Client" map-options option-label="name"
 													          option-value="id" emit-value hide-bottom-space
@@ -182,7 +217,7 @@
 
 													</q-select>
 												</div>
-												<div class="col-12 col-md-12">
+												<div class="col-12 col-md-6">
 												<q-select v-model="addMore.product" :options="productOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Product" map-options option-label="name"
 													          use-input @filter="filterProductFn" outlined dense hide-bottom-space>
@@ -190,6 +225,16 @@
 															<q-item>
 																<q-item-section class="text-grey">
 																	No results
+																</q-item-section>
+															</q-item>
+														</template>
+
+														<template v-slot:option="scope">
+															<q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+																<q-item-section>
+																	<q-item-label>
+																		{{ scope.opt.name }} - {{ scope.opt.packSize }}
+																	</q-item-label>
 																</q-item-section>
 															</q-item>
 														</template>
@@ -213,11 +258,20 @@
 													<q-btn class="full-width" label="Add Que" color="primary" @click="addToQueue" no-caps/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
-													<q-select v-model="invoice.platform" :options="platformOptions" class="col col-4"
+													<q-select v-model="invoice.platform" :options="platformOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Platform" outlined dense @change="calculateTotal"/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
 													<q-input v-model.number="invoice.others" type="number" label="Others Cost" outlined dense hide-bottom-space/>
+												</div>
+												<div class="col-12 col-md-grow q-pt-md">
+													<q-select v-model="invoice.paymentType" :options="paymentOptions" clearable
+													          input-debounce="1000" label="Payment Type" outlined dense/>
+												</div>
+												<div class="col-12 col-md-6 q-pt-md" v-if="invoice.paymentType === 'Credit'">
+													<date-picker-component v-model="invoice.creditPeriod" :dense="false"
+													                       class="col col-6" dense hide-bottom-space
+													                       label="Credit Period"/>
 												</div>
 											</div>
 											<div class="row justify-end q-pt-md">
@@ -387,11 +441,14 @@
 								</q-tab-panel>
 								<q-tab-panel name="product">
 									<div class="row">
-										<div class="col-6">
+										<div :class="invoiceDetails.payment === 'Paid' ? 'col-6' : 'col-4'">
 											Order Date: {{ $helper.convertDate(invoiceDetails.orderDate) }} <br>
 										</div>
-										<div class="col-6">
+										<div :class="invoiceDetails.payment === 'Paid' ? 'col-6 text-right' : 'col-4 text-center'">
 											Shipping Date: {{ $helper.convertDate(invoiceDetails.shippingDate) }} <br>
+										</div>
+										<div class="col-4 text-right" v-if="invoiceDetails.payment !== 'Paid'">
+											Due Date: {{ $helper.convertDate(invoiceDetails.creditPeriod) }} <br>
 										</div>
 									</div>
 									<q-markup-table dense class="q-mt-md">
@@ -497,6 +554,7 @@ import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {InvoiceInterface} from "src/customs/interfaces/invoice.interface";
 import {ProductInterface} from "src/customs/interfaces/product.interface";
 import DatePickerComponent from "src/components/date-picker/Date-picker.component.vue";
+import moment from "moment";
 
 interface AddMoreInterface {
 	product: ProductInterface,
@@ -514,6 +572,13 @@ export default class List extends Vue {
 	detailsDialogue: boolean = false
 
 	invDate: any = this.$helper.convertDate(new Date())
+
+	show: boolean = false
+
+	dates: any = {
+		from: moment().startOf('week').toDate(),
+		to: moment().toDate()
+	}
 
 	/***************** table ****************/
 	rows: any = [];
@@ -641,13 +706,12 @@ export default class List extends Vue {
 	productOptions: any[] = [];
 	clientOptions: any[] = [];
 	platformOptions: any[] = ['Daraz', 'Facebook', 'Offline'];
+	paymentOptions: any[] = ['Cash', 'Credit'];
 
 	preservedProducts: Array<AddMoreInterface> = [];
 
 	addMore: AddMoreInterface = {
-		product: {
-			id: '', name: '', packSize: ''
-		},
+		product: null,
 		quantity: null,
 		unitTP: null,
 		unitMRP: null,
@@ -679,12 +743,14 @@ export default class List extends Vue {
 	}
 
 	@Watch('filter', { immediate: true })
+	@Watch('dates', { immediate: true })
 	onFilter() {
 		this.onRequest({
 			pagination: this.pagination
 		})
 	}
 	onRequest({ pagination }: any = {}) {
+		console.log(this.dates)
 		if (!this.isLoading) {
 			if (pagination) {
 				this.pagination = pagination
@@ -697,6 +763,7 @@ export default class List extends Vue {
 					'&sort=' + this.pagination.sortBy +
 					'&order=' + (this.pagination.descending ? 'DESC' : 'ASC')
 			if (this.filter) url += '&search=' + this.filter
+			url += '&startDate=' + this.dates.from + '&endDate=' + this.dates.to
 			this.$axios.get(url).then(async (response) => {
 				if (!(response instanceof Error)) {
 					const res = response.data as AxiosResponseInterface
@@ -736,9 +803,7 @@ export default class List extends Vue {
 
 	resetAddMore() {
 		this.addMore = {
-			product: {
-				id: '', name: '', packSize: ''
-			},
+			product: null,
 			unitTP: null,
 			unitMRP: null,
 			quantity: null,
@@ -822,8 +887,35 @@ export default class List extends Vue {
 		this.invoice.others = 0
 		this.invoice.platform = ''
 		this.invoice.createInvoiceDetailsDto = []
+		this.invoice.payment = ''
+		this.invoice.paymentType = ''
+		this.invoice.creditPeriod = null
 		this.preservedProducts = []
 		this.currentClient = {}
+	}
+
+	resetSelection() {
+		this.dates.from = moment().startOf('week').toDate()
+		this.dates.to = moment().toDate()
+		this.onFilter()
+	}
+
+	paid(id: string) {
+		//@ts-ignore
+		Loading.show({ spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey' })
+		const url = `/invoice/paid/${id}`
+		this.$axios.patch(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				this.$q.notify({
+					message: res.message,
+					type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+				})
+				this.onFilter()
+			}
+		}).finally(() => {
+			Loading.hide()
+		})
 	}
 
 	/*************** filter ***************/
