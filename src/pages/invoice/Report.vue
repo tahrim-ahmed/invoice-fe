@@ -17,11 +17,11 @@
 							<div class="q-table__control q-py-xs">
 								<q-btn color="primary" icon="add" label="Invoice" size="sm" @click="addDialog = true"/>
 							</div>
-							<q-btn color="primary" label="Select Range" class="q-ml-md q-my-xs col-md-3 col-3" size="sm" no-caps>
+							<q-btn color="primary" label="Select Order Date Range" class="q-ml-md q-my-xs col-md-3 col-3" size="sm" no-caps>
 								<q-menu v-model="show" anchor="bottom left" self="top left">
-									<q-date v-model="dates" range @input="show = false" minimal>
+									<q-date v-model="dates" @input="show = false" range minimal style="background: #d1ffff">
 										<div class="row justify-end q-pt-none q-mt-none">
-											<q-btn label="Clear" no-caps color="primary" size="sm" @click="resetSelection"/>
+											<q-btn label="Clear Selection" color="primary" size="sm" @click="resetSelection" no-caps/>
 										</div>
 									</q-date>
 								</q-menu>
@@ -98,19 +98,34 @@
 													</q-item-section>
 													<q-item-section>
 														<div>Paid</div>
-														<q-popup-proxy :breakpoint="700">
-															<q-banner dense>
-																<template v-slot:avatar>
-																	<q-icon color="info" name="local_atm"/>
-																</template>
-																Would you really like to mark this invoice as paid?
-																<template v-slot:action>
-																	<q-btn color="negative" glossy @click="paid(props.row.id)" v-close-popup> Yes
-																	</q-btn>
-																	<q-btn v-close-popup color="secondary" glossy> No</q-btn>
-																</template>
-															</q-banner>
-														</q-popup-proxy>
+														<q-menu anchor="bottom end" self="top left">
+															<q-list style="min-width: 100px" class="bg-accent text-white">
+																<q-item clickable>
+																	<q-item-section>
+																		<div>Full</div>
+																		<q-popup-proxy :breakpoint="700">
+																			<q-banner dense>
+																				<template v-slot:avatar>
+																					<q-icon color="info" name="local_atm"/>
+																				</template>
+																				Would you really like to mark this invoice as full paid?
+																				<template v-slot:action>
+																					<q-btn color="negative" glossy @click="paid(props.row.id)"
+																					       v-close-popup label="Yes" no-caps/>
+																					<q-btn v-close-popup color="secondary" glossy label="No" no-caps/>
+																				</template>
+																			</q-banner>
+																		</q-popup-proxy>
+																	</q-item-section>
+																</q-item>
+																<q-separator />
+																<q-item clickable @click="partialPayment(props.row)">
+																	<q-item-section>
+																		<div>Partial</div>
+																	</q-item-section>
+																</q-item>
+															</q-list>
+														</q-menu>
 													</q-item-section>
 												</q-item>
 												<q-separator/>
@@ -145,10 +160,10 @@
 																</template>
 																Would you really like to delete invoice
 																<span class="text-bold text-negative">
-																{{props.row.invoiceNo}}
+																{{props.row.invoiceID}}
 																</span> for forever?
 																<template v-slot:action>
-																	<q-btn color="negative" glossy @click="remove(props.row._id)" v-close-popup> Yes</q-btn>
+																	<q-btn color="negative" glossy @click="remove(props.row.id)" v-close-popup> Yes</q-btn>
 																	<q-btn v-close-popup color="secondary" glossy> No</q-btn>
 																</template>
 															</q-banner>
@@ -423,6 +438,7 @@
 							<q-tabs class="q-pt-none" v-model="detailsTab" dense active-color="primary">
 								<q-tab name="client" label="Client Details"/>
 								<q-tab name="product" label="Invoice Details"/>
+								<q-tab name="payment" label="Payment Details"/>
 							</q-tabs>
 							<q-tab-panels v-model="detailsTab" class="bg-grey-1" animated>
 								<q-tab-panel name="client">
@@ -537,7 +553,67 @@
 										</tbody>
 									</q-markup-table>
 								</q-tab-panel>
+								<q-tab-panel name="payment">
+									<div class="row">
+										<div class="col-6">
+											Invoice ID: {{ invoiceDetails.invoiceID }} <br>
+										</div>
+										<div class="col-6">
+											Creation Date: {{ $helper.convertDate(invoiceDetails.createdAt) }} <br>
+										</div>
+										<div class="col-6">
+											Payment Type: {{ invoiceDetails.paymentType }} <br>
+										</div>
+										<div class="col-6">
+											Payment Status: {{ invoiceDetails.payment }} <br>
+										</div>
+										<div class="col-6">
+											Paid Amount: {{ invoiceDetails.paidAmount }} <br>
+										</div>
+										<div class="col-6">
+											Due Amount: {{ Number(invoiceDetails.totalMRP) - Number(invoiceDetails.paidAmount) }} <br>
+										</div>
+									</div>
+								</q-tab-panel>
 							</q-tab-panels>
+						</q-card>
+					</q-dialog>
+
+					<!--	Payment Dialog	-->
+					<q-dialog v-model="paymentDialogue" persistent>
+						<q-card style="width: 400px; max-width: 80vw; max-height: 100vw;">
+							<q-bar class="bg-primary text-white">
+								<q-space />
+								<q-btn dense flat icon="close" @click="closePaymentDialog">
+									<q-tooltip>Close</q-tooltip>
+								</q-btn>
+							</q-bar>
+							<q-form greedy @submit.prevent="savePartialPayment">
+								<q-card-section class="q-pa-none q-ml-md q-mt-md text-bold">
+									Pay Amount
+								</q-card-section>
+								<q-card-section>
+									<div class="row q-col-gutter-md">
+										<div class="col-12 col-md-12 q-pt-md">
+											<q-input v-model.number="invoiceDetails.paidAmount" type="number" label="Already Paid" outlined dense
+											         hide-bottom-space disable/>
+										</div>
+										<div class="col-12 col-md-12 q-pt-md">
+											<q-input v-model.number="invoiceDetails.dueAmount" type="number" label="Due Amount" outlined dense
+											         hide-bottom-space disable/>
+										</div>
+										<div class="col-12 col-md-12 q-pt-md">
+											<q-input v-model.number="partialPay.amount" label="Pay Amount" outlined dense hide-bottom-space type="number"
+											         :rules="[val => !!val || '* Required',
+											         val => val <= Number(invoiceDetails.dueAmount) ||
+											         'Input amount should be Less than or Equal to the due']"/>
+										</div>
+									</div>
+									<div class="row justify-end q-pt-md">
+										<q-btn color="primary" label="Submit" type="submit"/>
+									</div>
+								</q-card-section>
+							</q-form>
 						</q-card>
 					</q-dialog>
 				</div>
@@ -548,7 +624,7 @@
 
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
-import {Loading, QSpinnerClock} from "quasar";
+import {Loading, QSpinnerClock, QSpinnerTail} from "quasar";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {InvoiceInterface} from "src/customs/interfaces/invoice.interface";
@@ -570,6 +646,7 @@ export default class List extends Vue {
 	detailsTab = 'client'
 
 	detailsDialogue: boolean = false
+	paymentDialogue: boolean = false
 
 	invDate: any = this.$helper.convertDate(new Date())
 
@@ -663,6 +740,14 @@ export default class List extends Vue {
 		createInvoiceDetailsDto: []
 	}
 
+	partialPay: {
+		id: string
+		amount: number
+	} = {
+		id:'',
+		amount: null
+	}
+
 	invoiceDetails: any = {
 		client: {
 			code: '',
@@ -674,7 +759,9 @@ export default class List extends Vue {
 		},
 		createdAt: '',
 		createdBy: '',
+		creditPeriod: '',
 		deletedAt: '',
+		dueAmount: 0,
 		id: '',
 		invoiceDetails: [
 			{
@@ -688,17 +775,18 @@ export default class List extends Vue {
 				unitTP: 0,
 			}
 		],
+		invoiceID: '',
+		orderDate: '',
 		others: 0,
+		paidAmount: 0,
+		payment: '',
+		paymentType: '',
 		platform: '',
+		shippingDate: '',
 		totalCommission: 0,
 		totalMRP: 0,
 		totalTP: 0,
 		totalProfit: 0,
-		orderDate: '',
-		shippingDate: '',
-		payment: '',
-		paymentType: '',
-		creditPeriod: ''
 	}
 
 	currentClient: any = {}
@@ -722,12 +810,19 @@ export default class List extends Vue {
 		Object.keys(this.invoiceDetails).forEach((key: any) => {
 			this.invoiceDetails[key] = invoice[key] || '';
 		})
+		this.invoiceDetails.dueAmount = Number(invoice.totalMRP) - Number(invoice.paidAmount);
 		this.detailsDialogue = true;
 	}
 
 	closeDetailsDialog() {
 		this.detailsDialogue = false;
 		this.detailsTab = 'client';
+	}
+
+	closePaymentDialog() {
+		this.paymentDialogue = false;
+		this.partialPay.id = '';
+		this.partialPay.amount = null;
 	}
 
 	@Watch('invoice.clientID')
@@ -750,7 +845,6 @@ export default class List extends Vue {
 		})
 	}
 	onRequest({ pagination }: any = {}) {
-		console.log(this.dates)
 		if (!this.isLoading) {
 			if (pagination) {
 				this.pagination = pagination
@@ -900,6 +994,15 @@ export default class List extends Vue {
 		this.onFilter()
 	}
 
+	partialPayment(payment: any) {
+		Object.keys(this.invoiceDetails).forEach((key: any) => {
+			this.invoiceDetails[key] = payment[key] || '';
+		})
+		this.invoiceDetails.dueAmount = Number(payment.totalMRP) - Number(payment.paidAmount);
+		this.partialPay.id = payment.id;
+		this.paymentDialogue = true
+	}
+
 	paid(id: string) {
 		//@ts-ignore
 		Loading.show({ spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey' })
@@ -912,6 +1015,44 @@ export default class List extends Vue {
 					type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
 				})
 				this.onFilter()
+			}
+		}).finally(() => {
+			Loading.hide()
+		})
+	}
+
+	savePartialPayment() {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey'})
+		this.$axios.patch('invoice/partial-pay', this.partialPay).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				this.$q.notify({
+					message: res.message,
+					type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+				})
+				this.onFilter()
+			}
+		}).finally(() => {
+			this.closePaymentDialog();
+			Loading.hide()
+		})
+	}
+
+	remove(id: string) {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerTail, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/invoice/${id}`
+		this.$axios.delete(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				if (res.payload.data.isDeleted) {
+					this.$q.notify({
+						message: res.message,
+						type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+					})
+					this.onFilter();
+				}
 			}
 		}).finally(() => {
 			Loading.hide()

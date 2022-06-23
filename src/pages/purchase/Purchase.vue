@@ -383,9 +383,7 @@ export default class Purchase extends Vue {
 	preservedProducts: Array<AddMoreInterface> = [];
 
 	addMore: AddMoreInterface = {
-		product: {
-			id: '', name: '', packSize: ''
-		},
+		product: null,
 		quantity: null,
 		unitPrice: null,
 	}
