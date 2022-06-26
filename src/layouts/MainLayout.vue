@@ -118,7 +118,7 @@
 					<q-item-section>Invoice</q-item-section>
 				</q-item>
 				<q-separator/>
-				<q-item clickable v-ripple :to="{name: 'report'}">
+				<q-item clickable v-ripple :to="{name: 'statements'}">
 					<q-item-section avatar>
 						<q-icon color="primary" name="account_balance" />
 					</q-item-section>

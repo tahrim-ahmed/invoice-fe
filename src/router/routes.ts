@@ -36,6 +36,11 @@ const routes: RouteConfig[] = [
 				component: () => import('pages/invoice/Report.vue')
 			},
 			{
+				path: 'statements',
+				name: 'statements',
+				component: () => import('pages/statement/Statement.vue')
+			},
+			{
 				path: 'users',
 				name: 'users',
 				component: () => import('pages/users/Users.vue')

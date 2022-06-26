@@ -653,7 +653,7 @@ export default class List extends Vue {
 	show: boolean = false
 
 	dates: any = {
-		from: moment().startOf('week').toDate(),
+		from: moment().startOf('month').toDate(),
 		to: moment().toDate()
 	}
 
@@ -989,7 +989,7 @@ export default class List extends Vue {
 	}
 
 	resetSelection() {
-		this.dates.from = moment().startOf('week').toDate()
+		this.dates.from = moment().startOf('month').toDate()
 		this.dates.to = moment().toDate()
 		this.onFilter()
 	}
