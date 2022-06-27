@@ -46,7 +46,8 @@
 
 								<q-td class="q-px-sm text-center">
 									<q-icon class="cursor-pointer" color="dark" name="view_module" size="sm">
-										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate">
+										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate"
+										        v-if="props.row.purpose === 'Paid to BAYER'">
 											<q-list style="min-width: 100px">
 												<q-item clickable dense v-close-popup @click="openUpdateDialog(props.row)">
 													<q-item-section side>
@@ -75,6 +76,19 @@
 																</template>
 															</q-banner>
 														</q-popup-proxy>
+													</q-item-section>
+												</q-item>
+											</q-list>
+										</q-menu>
+										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate"
+										        v-else>
+											<q-list style="min-width: 100px">
+												<q-item clickable dense>
+													<q-item-section side>
+														<q-icon color="negative" name="block" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<q-item-label style="font-size: 15px">No Action</q-item-label>
 													</q-item-section>
 												</q-item>
 											</q-list>
@@ -177,7 +191,7 @@ export default class List extends Vue {
 	filter: string = ''
 	columns: any = [
 		{
-			label: 'Purpose',
+			label: 'Statements',
 			name: 'purpose',
 			field: 'purpose',
 			align: 'left',

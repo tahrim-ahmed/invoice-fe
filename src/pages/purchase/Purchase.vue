@@ -290,7 +290,7 @@
 
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
-import {Loading, QSpinnerClock} from "quasar";
+import {Loading, QSpinnerClock, QSpinnerTail} from "quasar";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {ProductInterface} from "src/customs/interfaces/product.interface";
@@ -515,6 +515,26 @@ export default class Purchase extends Vue {
 		this.purchase.createPurchaseDetailsDto = []
 		this.purchase.type = ''
 		this.preservedProducts = []
+	}
+
+	remove(id: string) {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerTail, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/purchase/${id}`
+		this.$axios.delete(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				if (res.payload.data.isDeleted) {
+					this.$q.notify({
+						message: res.message,
+						type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+					})
+					this.onFilter();
+				}
+			}
+		}).finally(() => {
+			Loading.hide()
+		})
 	}
 
 	/*************** filter ***************/
