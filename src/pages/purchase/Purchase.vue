@@ -139,6 +139,16 @@
 															</q-item>
 														</template>
 
+														<template v-slot:option="scope">
+															<q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+																<q-item-section>
+																	<q-item-label>
+																		{{ scope.opt.name }} - {{ scope.opt.packSize }}
+																	</q-item-label>
+																</q-item-section>
+															</q-item>
+														</template>
+
 													</q-select>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
@@ -269,7 +279,7 @@
 											</td>
 										</tr>
 										<tr>
-											<td class="text-right text-bold" colspan="4">Total TP</td>
+											<td class="text-right text-bold" colspan="4">Total Price</td>
 											<td class="text-bold">৳
 												{{
 													$helper.numberWithCommas(purchaseDetails.totalPrice.toFixed(2))
