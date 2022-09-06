@@ -606,7 +606,7 @@
 											<q-input v-model.number="partialPay.amount" label="Pay Amount" outlined dense hide-bottom-space type="number"
 											         :rules="[val => !!val || '* Required',
 											         val => val <= Number(invoiceDetails.dueAmount) ||
-											         'Input amount should be Less than or Equal to the due']"/>
+											         'Amount should be Less than or Equal to the due']"/>
 										</div>
 									</div>
 									<div class="row justify-end q-pt-md">
@@ -653,7 +653,7 @@ export default class List extends Vue {
 	show: boolean = false
 
 	dates: any = {
-		from: moment().startOf('month').toDate(),
+		from: moment().startOf('year').toDate(),
 		to: moment().toDate()
 	}
 
@@ -989,7 +989,7 @@ export default class List extends Vue {
 	}
 
 	resetSelection() {
-		this.dates.from = moment().startOf('month').toDate()
+		this.dates.from = moment().startOf('year').toDate()
 		this.dates.to = moment().toDate()
 		this.onFilter()
 	}

@@ -37,6 +37,10 @@
 							<q-tr :props="props">
 
 								<q-td class="q-px-sm cursor-pointer">
+									{{ $helper.convertDate(props.row.createdAt) }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
 									{{ props.row.purpose }}
 								</q-td>
 
@@ -191,6 +195,12 @@ export default class List extends Vue {
 	filter: string = ''
 	columns: any = [
 		{
+			label: 'Date',
+			name: 'date',
+			field: 'createdAt',
+			align: 'left',
+			sortable: true
+		},{
 			label: 'Statements',
 			name: 'purpose',
 			field: 'purpose',
@@ -237,13 +247,16 @@ export default class List extends Vue {
 		})
 	}
 
+	report() {
+
+	}
+
 	@Watch('filter', {immediate: true})
 	onFilter() {
 		this.onRequest({
 			pagination: this.pagination
 		})
 	}
-
 
 	onRequest({pagination}: any = {}) {
 		if (pagination) {

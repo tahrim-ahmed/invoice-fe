@@ -1,8 +1,24 @@
 <template>
 	<q-layout>
 		<q-page-container>
-			<q-page class="flex flex-center">
-				Welcome
+			<q-page>
+				<q-tabs v-model="statement"
+				        class="text-primary text-bold q-pt-md"
+				        indicator-color="transparent" left-icon="chevron_left" mobile-arrows
+				        no-caps right-icon="chevron_right">
+
+					<q-tab v-for="statement in statementData" :key="Math.random()" :name="statement.purpose.name">
+						<q-card class="q-px-md" style="background: #00FFFF">
+							<q-card-section>
+								{{ statement.purpose.name }} <br>
+								<span class="big-tag">
+									{{ $helper.numDifferentiation(statement.amount) }}
+								</span>
+							</q-card-section>
+						</q-card>
+					</q-tab>
+
+				</q-tabs>
 			</q-page>
 		</q-page-container>
 	</q-layout>
@@ -10,54 +26,31 @@
 
 <script lang="ts">
 import {Component, Vue} from 'vue-property-decorator';
-import {LoginInterface} from "src/customs/interfaces/login.interface";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
-import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
-import {Loading, QSpinnerCube} from "quasar";
 
 @Component({})
 export default class Index extends Vue {
 	tab = 'info'
 
-	login: LoginInterface = {
-		email: "",
-		password: "",
-		isRemembered: false
+	statement = ''
+
+	statementData: any[] = []
+
+	created() {
+		setTimeout(() => {
+			this.getStatementData()
+		}, 1100)
 	}
 
-	loginFunc() {
-		this.login = {
-			...this.login,
-			isRemembered: this.login.isRemembered ? 1 : 0
-		}
-		//@ts-ignore
-		Loading.show({spinner: QSpinnerCube})
-		this.$axios.post('user/login', this.login).then(async (response) => {
+	getStatementData() {
+		this.$axios.get(`statement/statement-data`).then(response => {
 			if (!(response instanceof Error)) {
-				const loginResponse = response.data as AxiosResponseInterface
-				if (loginResponse.status === ResponseStatusEnum.SUCCESS) {
-					await this.$store.dispatch("setToken", loginResponse.payload.data.token)
-					await this.$store.dispatch("setCurrentUser", loginResponse.payload.data.user)
-					await this.$router.replace({name: 'dashboard'}).catch(e => e)
-					this.$q.notify({
-						message: `${loginResponse.message}`,
-						type: 'positive',
-						timeout: 4000,
-					})
-				}
-			} else {
-				this.$q.notify({
-					message: 'Login failed!!',
-					type: 'negative'
-				})
+				const res = response.data as AxiosResponseInterface
+				this.statementData = res?.payload?.data || ''
+				this.statement = this.statementData[0]?.purpose?.name
 			}
-		}).catch(() => {
-			this.$q.notify({
-				message: 'Something error',
-				type: 'negative'
-			})
-		}).finally(() => {
-			Loading.hide()
+			this.statementData[0].amount = this.statementData[0].amount - (this.statementData[3].amount + this.statementData[4].amount)
+			this.statementData[1].amount = this.statementData[1].amount - this.statementData[2].amount
 		})
 	}
 };
