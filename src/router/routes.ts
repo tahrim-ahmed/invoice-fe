@@ -7,6 +7,11 @@ const routes: RouteConfig[] = [
 		component: () => import('pages/auth/Login.vue')
 	},
 	{
+		path: '/preview',
+		name: 'preview',
+		component: () => import('pages/invoice-download/Preview.vue')
+	},
+	{
 		path: '/',
 		component: () => import('layouts/MainLayout.vue'),
 		children: [

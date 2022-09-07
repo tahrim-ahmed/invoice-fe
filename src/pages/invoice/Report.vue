@@ -83,6 +83,7 @@
 									<q-icon class="cursor-pointer" color="dark" name="view_module" size="sm">
 										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate">
 											<q-list style="min-width: 100px">
+												<!--Details Dialog-->
 												<q-item clickable dense v-close-popup @click="openDetailsDialog(props.row)">
 													<q-item-section side>
 														<q-icon color="secondary" name="table_view" style="font-size: 15px"/>
@@ -92,6 +93,7 @@
 													</q-item-section>
 												</q-item>
 												<q-separator/>
+												<!--Payment Dialog-->
 												<q-item v-if="props.row.payment !== 'Paid'" clickable dense>
 													<q-item-section side>
 														<q-icon color="info" name="local_atm" style="font-size: 15px"/>
@@ -129,7 +131,8 @@
 													</q-item-section>
 												</q-item>
 												<q-separator/>
-												<q-item clickable dense v-close-popup @click="">
+												<!--Download-->
+												<q-item clickable dense v-close-popup @click="gotoPreview">
 													<q-item-section side>
 														<q-icon color="positive" name="file_download" style="font-size: 15px"/>
 													</q-item-section>
@@ -138,6 +141,7 @@
 													</q-item-section>
 												</q-item>
 												<q-separator/>
+												<!--Print-->
 												<q-item clickable dense v-close-popup @click="">
 													<q-item-section side>
 														<q-icon color="primary" name="print" style="font-size: 15px"/>
@@ -147,6 +151,7 @@
 													</q-item-section>
 												</q-item>
 												<q-separator/>
+												<!--Delete-->
 												<q-item clickable dense>
 													<q-item-section side>
 														<q-icon color="negative" name="delete_forever" style="font-size: 15px"/>
@@ -1057,6 +1062,10 @@ export default class List extends Vue {
 		}).finally(() => {
 			Loading.hide()
 		})
+	}
+
+	gotoPreview() {
+		window.open('preview')
 	}
 
 	/*************** filter ***************/
