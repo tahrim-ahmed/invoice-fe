@@ -190,7 +190,7 @@
 											Total VAT Amount: <br>
 										</div>
 										<div class="col-6 text-right q-pr-sm">
-											<span style="font-weight: bold;"> {{$helper.numberWithCommas(invoiceData.totalMRP)}} BDT</span> <br>
+											<span style="font-weight: bold;"> {{$helper.numberWithCommas(totalGross)}} BDT</span> <br>
 											{{totalDiscount === 0? '-' : $helper.numberWithCommas(totalDiscount)}} BDT<br>
 											0% BDT<br>
 										</div>
@@ -248,6 +248,19 @@
 							<q-img src="images/qrcode.png" width="200px" style="margin: 9px 21px 8px 13px; border: 1px solid;"/>
 						</div>
 					</div>
+					<div class="text-center" style="font-size: 10px; margin-top: 20px">
+						This is a CRM Software generated Invoice. For details, scan the QR Code or contact with River Communication
+					</div>
+					<div class="row" style="font-size: 11px; margin-top: 20px; margin-left: 36px; margin-right: 36px">
+						<div class="col-6">
+							House: 1191, Avenue: 12, Road: 10, Mirpur DOHS, Dhaka - 1216 <br>
+							<span class="text-bold">www.rivercommunication.com</span>
+						</div>
+						<div class="col-6 text-right">
+							Cell: +88(0)1717150423, +88(0)17198123986 <br>
+							E-Mail: dis.rivercommunication@gmail.com
+						</div>
+					</div>
 				</page>
 			</q-page>
 		</q-page-container>
@@ -265,6 +278,7 @@ export default class List extends Vue {
 	tableLength: number = 0
 	invoiceID : any
 	invoiceData: any[] = []
+	totalGross: number = 0
 	totalDiscount: number = 0
 
 	created() {
@@ -290,9 +304,9 @@ export default class List extends Vue {
 						this.tableLength = 16 - this.invoiceData.invoiceDetails.length;
 						//@ts-ignore
 						this.invoiceData.invoiceDetails.forEach((item) => {
+							this.totalGross += (item.unitMRP * item.quantity);
 							this.totalDiscount += ((item.unitMRP * item.quantity * item.discount) / 100);
 						})
-						console.log(this.totalDiscount);
 					}
 				}
 			}
