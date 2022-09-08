@@ -18,19 +18,19 @@
 										Billing Address
 									</p>
 									<p class="q-pl-xs" style="margin: 0">
-										Nora Agro Service <br>
-										Proprietor: KBD Sayed Salah Uddin <br>
-										ID: DIS-21-0001 <br>
-										Cell: 01716418879
+										{{invoiceData.client.name}} <br>
+										Proprietor: {{invoiceData.client.proprietor}} <br>
+										ID: {{invoiceData.client.code}} <br>
+										Cell: {{invoiceData.client.cell}}
 									</p>
 									<p style="background: rgb(188, 189, 192); margin-top: 20px; margin-bottom: 3px; font-weight: bold;
 									font-size: 12px; text-align: center">
 										Shipping Address
 									</p>
 									<p class="q-pl-xs" style="margin: 0">
-										Address: Hathajari, Chittagong <br>
-										Production: Muktagacha <br>
-										Email: salauddin.nora123@gmail.com
+										Address: {{invoiceData.client.shipping}} <br>
+										Production: {{invoiceData.client.production}} <br>
+										Email: {{invoiceData.client.email}}
 									</p>
 								</td>
 								<td style="border: 1px solid; width: 45%">
@@ -41,10 +41,10 @@
 											Invoice Created By:
 										</div>
 										<div class="col-6 text-right q-pr-xs">
-											20228071249<br>
-											07 September, 2022<br>
+											{{invoiceData.invoiceID}}<br>
+											{{$helper.convertDate(invoiceData.createdAt)}}<br>
 											<span class="text-bold">
-												Tahrim Ahmed Miad
+												{{$store.getters.currentUser.userName}}
 											</span>
 										</div>
 									</div>
@@ -141,206 +141,31 @@
 								<th style="border-left: 1px solid #000000; border-right: 1px solid #000000">Dis. Amount</th>
 								<th style="border-left: 1px solid #000000; border-right: 1px solid #000000">Amount</th>
 							</tr>
-							<tr>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">01</td>
-								<td>Belt Expert</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">100 ml.</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">50 pc</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">545 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
+							<tr v-for="(details, index) in invoiceData.invoiceDetails" :key="Math.random()">
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">{{index+1}}</td>
+								<td class="q-pl-xs">{{details.product.name}}</td>
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">{{details.product.packSize}}</td>
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">{{$helper.numberWithCommas(details.unitMRP)}} BDT</td>
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">{{details.quantity}} PC</td>
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">
+									{{$helper.numberWithCommas(details.unitMRP *  details.quantity)}} BDT
+								</td>
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">
+									{{ details.discount === 0? '-' : details.discount }}
+								</td>
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">
+									{{
+									details.discount === 0? '-' : $helper.numberWithCommas((details.unitMRP *  details.quantity * details.discount)
+											/ 100) + ' BDT'
+									}}
+								</td>
+								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">
+									{{$helper.numberWithCommas((details.unitMRP *  details.quantity) - ((details.unitMRP *  details.quantity *
+										details.discount) / 100))}} BDT
+								</td>
 							</tr>
-							<tr>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">02</td>
-								<td>Belt Expert</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">100 ml.</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">50 pc</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">545 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
-							</tr>
-							<tr>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">03</td>
-								<td>Belt Expert</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">100 ml.</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">50 pc</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">545 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
-							</tr>
-							<tr>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">04</td>
-								<td>Belt Expert</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">100 ml.</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">50 pc</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">545 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">-</td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid">27,250 BDT</td>
-							</tr>
-							<tr>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-							</tr>
-							<tr>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-							</tr>
-							<tr>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid"></td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
+							<tr style="color: transparent" v-for="length in tableLength">
 								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000"></td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td>a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
-							</tr>
-							<tr style="color: #FFFFFF">
-								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
 								<td>a</td>
 								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
 								<td style="text-align: center; border-left: 1px solid #000000; border-right: 1px solid #000000">a</td>
@@ -358,10 +183,26 @@
 								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid; border-bottom: 1px solid"></td>
 								<td style="text-align: center; border-left: 1px solid; border-right: 1px solid; border-bottom: 1px solid"></td>
 								<td style="text-align: justify-all; border: 1px solid; font-size: 11px" colspan="3">
-									Total Gross Amount: <span style="font-weight: bold;"> 50,000 BDT</span> <br>
-									Total Disc. Amount: - <br>
-									Total Due Amount: - <br>
-									<p style="background: rgb(188, 189, 192);"> Total Payable Amount: <span style="font-weight: bold"> 50,000 BDT</span> </p>
+									<div class="row">
+										<div class="col-6 q-pl-sm">
+											Total Gross Amount: <br>
+											Total Disc. Amount: <br>
+											Total VAT Amount: <br>
+										</div>
+										<div class="col-6 text-right q-pr-sm">
+											<span style="font-weight: bold;"> {{$helper.numberWithCommas(invoiceData.totalMRP)}} BDT</span> <br>
+											{{totalDiscount === 0? '-' : $helper.numberWithCommas(totalDiscount)}} BDT<br>
+											0% BDT<br>
+										</div>
+									</div>
+									<div class="row" style="background: rgb(188, 189, 192);">
+										<div class="col-6 q-pl-sm">
+											Total Payable Amount:
+										</div>
+										<div class="col-6 text-bold text-right q-pr-sm">
+											{{$helper.numberWithCommas(invoiceData.totalMRP)}} BDT
+										</div>
+									</div>
 								</td>
 							</tr>
 						</table>
@@ -377,9 +218,10 @@
 										</td>
 										<td style="padding-left: 15px">
 											<p style="font-size: 14px; margin-bottom: 2px; margin-top: 0">Payment Method:</p>
-											<p style="font-size: 18px; font-weight: bold; margin-bottom: 2px; margin-top: 0">Credit</p>
+											<p style="font-size: 18px; font-weight: bold; margin-bottom: 2px; margin-top: 0">{{invoiceData.paymentType}}</p>
 											<p style="font-size: 14px; margin-bottom: 2px; margin-top: 0">Payment Period:</p>
-											<p style="font-size: 18px; font-weight: bold; margin-bottom: 2px; margin-top: 0">30 Days</p>
+											<p style="font-size: 18px; font-weight: bold; margin-bottom: 2px; margin-top: 0">
+												{{invoiceData.paymentType === 'Cash'? '-' : $helper.convertDate(invoiceData.creditPeriod)}}</p>
 										</td>
 									</tr>
 								</table>
@@ -389,7 +231,7 @@
 									<tr>
 										<td style="border: 1px solid #000000; width: 161px; height: 95px;">
 											<hr style="width: 65%; margin-top: 35%; margin-bottom: 0">
-											<p style="font-size: 10px; text-align: center; margin-top: 5px">Client Signature & Seal</p>
+											<p style="font-size: 10px; text-align: center; margin-top: 5px">River Communication</p>
 										</td>
 										<td style="padding-left: 15px">
 											<p style="font-size: 14px; margin-bottom: 2px; margin-top: 0">Product Details Hotline:</p>
@@ -414,9 +256,48 @@
 
 <script lang="ts">
 import {Component, Vue} from 'vue-property-decorator';
+import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
+import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 
 @Component({})
 export default class List extends Vue {
+
+	tableLength: number = 0
+	invoiceID : any
+	invoiceData: any[] = []
+	totalDiscount: number = 0
+
+	created() {
+		const urlParams = new URLSearchParams(window.location.search);
+		this.invoiceID = urlParams.get('id');
+		this.getInvoiceByID();
+	}
+
+	getInvoiceByID() {
+		let url = 'invoice/' + this.invoiceID
+		this.$axios.get(url).then(async (response) => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				if (res.error) {
+					this.$q.notify({
+						message: res.message,
+						type: 'negative'
+					})
+				} else {
+					if (res.status === ResponseStatusEnum.SUCCESS) {
+						this.invoiceData = res.payload.data || []
+						//@ts-ignore
+						this.tableLength = 16 - this.invoiceData.invoiceDetails.length;
+						//@ts-ignore
+						this.invoiceData.invoiceDetails.forEach((item) => {
+							this.totalDiscount += ((item.unitMRP * item.quantity * item.discount) / 100);
+						})
+						console.log(this.totalDiscount);
+					}
+				}
+			}
+		})
+	}
 
 }
 </script>

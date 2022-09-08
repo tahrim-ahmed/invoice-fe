@@ -43,6 +43,10 @@
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.proprietor }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
 									{{ props.row.cell }}
 								</q-td>
 
@@ -56,6 +60,10 @@
 
 								<q-td class="q-px-sm cursor-pointer">
 									{{ props.row.shipping }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ props.row.production }}
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
@@ -129,6 +137,12 @@
 													<q-input v-model="client.cell" label="Client Contact" outlined dense/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
+													<q-input v-model="client.proprietor" label="Proprietor Name" outlined dense/>
+												</div>
+												<div class="col-12 col-md-6 q-pt-md">
+													<q-input v-model="client.production" label="Production" outlined dense/>
+												</div>
+												<div class="col-12 col-md-6 q-pt-md">
 													<q-input v-model="client.email" label="Email" outlined dense/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
@@ -173,6 +187,12 @@
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
 													<q-input v-model="updateClient.cell" label="Client Contact" outlined dense/>
+												</div>
+												<div class="col-12 col-md-6 q-pt-md">
+													<q-input v-model="updateClient.proprietor" label="Proprietor Name" outlined dense/>
+												</div>
+												<div class="col-12 col-md-6 q-pt-md">
+													<q-input v-model="updateClient.production" label="Production" outlined dense/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
 													<q-input v-model="updateClient.email" label="Email" outlined dense/>
@@ -235,6 +255,12 @@ export default class List extends Vue {
 			align: 'left',
 			sortable: true
 		},{
+			label: 'Proprietor',
+			name: 'proprietor',
+			field: 'proprietor',
+			align: 'left',
+			sortable: true
+		},{
 			label: 'Contact No',
 			name: 'cell',
 			field: 'cell',
@@ -257,6 +283,11 @@ export default class List extends Vue {
 			field: 'shipping',
 			align: 'left',
 		},{
+			label: 'Production',
+			name: 'production',
+			field: 'production',
+			align: 'left',
+		},{
 			label: 'Action',
 			name: 'action',
 			field: 'action',
@@ -270,6 +301,8 @@ export default class List extends Vue {
 		code: '',
 		name: '',
 		cell: '',
+		proprietor: '',
+		production: '',
 		billing: '',
 		shipping: '',
 		email: ''
@@ -281,6 +314,8 @@ export default class List extends Vue {
 		code: '',
 		name: '',
 		email: '',
+		proprietor: '',
+		production: '',
 		billing: '',
 		shipping: '',
 		cell: '',
@@ -291,6 +326,8 @@ export default class List extends Vue {
 		this.updateClient.code = client.code;
 		this.updateClient.name = client.name;
 		this.updateClient.cell = client.cell;
+		this.updateClient.proprietor = client.proprietor;
+		this.updateClient.production = client.production;
 		this.updateClient.email = client.email;
 		this.updateClient.billing = client.billing;
 		this.updateClient.shipping = client.shipping;

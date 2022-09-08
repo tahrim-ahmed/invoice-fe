@@ -132,7 +132,7 @@
 												</q-item>
 												<q-separator/>
 												<!--Download-->
-												<q-item clickable dense v-close-popup @click="gotoPreview">
+												<q-item clickable dense v-close-popup @click="gotoPreview(props.row.id)">
 													<q-item-section side>
 														<q-icon color="positive" name="file_download" style="font-size: 15px"/>
 													</q-item-section>
@@ -1064,8 +1064,8 @@ export default class List extends Vue {
 		})
 	}
 
-	gotoPreview() {
-		window.open('preview')
+	gotoPreview(id: string) {
+		window.open('preview?id='+id)
 	}
 
 	/*************** filter ***************/
