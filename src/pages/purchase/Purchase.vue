@@ -5,7 +5,7 @@
 				<div class="col-12 q-px-md q-pt-md">
 					<q-table :columns="columns" :data="rows" :loading="isLoading" :pagination.sync="pagination"
 					         :style="'max-height: 88.5vh'" binary-state-sort card-class="full-width bg-card-theme"
-					         row-key="id" wrap-cells>
+					         row-key="id" wrap-cells @request="onRequest">
 						<template v-slot:no-data="{ icon, message, filter }">
 							<div class="text-overline full-width row justify-center q-py-xl">
 								<q-icon :name="filter ? 'filter_b_and_w' : icon" class="col-1" color="warning" size="2em"/>
@@ -35,15 +35,20 @@
 							<q-tr :props="props">
 
 								<q-td class="q-px-sm cursor-pointer">
-									{{ $helper.convertDate(props.row.orderDate) }}
-								</q-td>
-
-								<q-td class="q-px-sm cursor-pointer">
+									<q-icon name="calendar_month" color="secondary"/>
 									{{ $helper.convertDate(props.row.purchaseDate) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer">
-									{{ props.row.totalAmount }}
+									{{ $helper.numberWithCommas(props.row.totalPrice) }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									<q-chip :color="props.row.type === 'Cash' ? 'positive' : 'negative'"
+									        text-color="black" class="text-bold"
+									        :icon="props.row.type === 'Cash' ? 'paid' : 'credit_card'">
+										{{ props.row.type }}
+									</q-chip>
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
@@ -101,7 +106,7 @@
 
 					<!--	Add Invoice  -->
 					<q-dialog class="row" v-model="addDialog" persistent>
-						<q-card :class="purchase.totalAmount > 0? 'col q-mr-md' : ''">
+						<q-card :class="purchase.totalPrice > 0? 'col q-mr-md' : ''">
 							<q-bar class="bg-primary text-white">
 								<q-space />
 								<q-btn dense flat icon="close" @click="closeAddDialog">
@@ -113,7 +118,7 @@
 							</q-tabs>
 							<q-tab-panels v-model="tab" class="bg-grey-1" animated>
 								<q-tab-panel name="info">
-									<q-form greedy @submit.prevent="saveInvoice">
+									<q-form greedy @submit.prevent="savePurchase">
 										<q-card-section>
 											<div class="row q-col-gutter-md">
 												<div class="col-12 col-md-12">
@@ -134,16 +139,30 @@
 															</q-item>
 														</template>
 
+														<template v-slot:option="scope">
+															<q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+																<q-item-section>
+																	<q-item-label>
+																		{{ scope.opt.name }} - {{ scope.opt.packSize }}
+																	</q-item-label>
+																</q-item-section>
+															</q-item>
+														</template>
+
 													</q-select>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
-													<q-input v-model="addMore.unitTP" label="Unit TP" outlined dense hide-bottom-space/>
+													<q-input v-model="addMore.unitPrice" label="Unit Price" outlined dense hide-bottom-space/>
 												</div>
 												<div class="col-12 col-md-4 q-pt-md">
 													<q-input v-model.number="addMore.quantity" type="number" label="Quantity" outlined dense hide-bottom-space/>
 												</div>
 												<div class="col-md-4 q-pt-md">
 													<q-btn class="full-width" label="Add Que" color="primary" @click="addToQueue" no-caps/>
+												</div>
+												<div class="col-12 col-md-12 q-pt-md">
+													<q-select v-model="purchase.type" :options="purchaseOptions" class="col col-4"
+													          input-debounce="1000" label="Select Payment Type" outlined dense/>
 												</div>
 											</div>
 											<div class="row justify-end q-pt-md">
@@ -154,12 +173,9 @@
 								</q-tab-panel>
 							</q-tab-panels>
 						</q-card>
-						<q-card v-if="purchase.totalAmount > 0" class="col">
+						<q-card v-if="purchase.totalPrice > 0" class="col">
 							<div class="row q-ma-md">
-								<div class="col-12 col-md-6 text-bold">
-									Date: {{invDate}} <br>
-								</div>
-								<div class="col-12 col-md-6 text-bold">
+								<div class="col-12 col-md-12 text-bold">
 									Purchase Date: {{ $helper.convertDate(purchase.purchaseDate) }}
 								</div>
 							</div>
@@ -173,7 +189,7 @@
 										<th>Product Name</th>
 										<th>Pack Size</th>
 										<th>Quantity</th>
-										<th>Unit TP</th>
+										<th>Unit Price</th>
 										<th>Total</th>
 										<th>#</th>
 									</tr>
@@ -192,16 +208,16 @@
 											</q-popup-edit>
 										</td>
 										<td>
-											৳ {{ product.unitTP }}
-											<q-popup-edit v-model="product.unitTP" persistent>
+											৳ {{ product.unitPrice }}
+											<q-popup-edit v-model="product.unitPrice" persistent>
 												<template v-slot="scope">
 													<q-input v-model.number="scope.value" autofocus dense type="number"
-													         @keyup.enter="updateUnitTP(index, scope.value)"/>
+													         @keyup.enter="updateUnitPrice(index, scope.value)"/>
 												</template>
 											</q-popup-edit>
 										</td>
 										<td>৳ {{
-												$helper.numberWithCommas((Number(product.quantity) * Number(product.unitTP)).toFixed(2))
+												$helper.numberWithCommas((Number(product.quantity) * Number(product.unitPrice)).toFixed(2))
 											}}
 										</td>
 										<td class="cursor-pointer">
@@ -209,9 +225,9 @@
 										</td>
 									</tr>
 									<tr>
-										<td class="text-right text-bold" colspan="4">Total TP</td>
+										<td class="text-right text-bold" colspan="4">Total Price</td>
 										<td class="text-right text-bold">৳ {{
-												$helper.numberWithCommas(purchase.totalAmount)
+												$helper.numberWithCommas(purchase.totalPrice)
 											}}
 										</td>
 									</tr>
@@ -246,7 +262,7 @@
 											<th class="text-left">Product Name</th>
 											<th class="text-left">Pack Size</th>
 											<th class="text-left">Quantity</th>
-											<th class="text-left">Unit TP</th>
+											<th class="text-left">Unit Price</th>
 											<th class="text-left">Total</th>
 										</tr>
 										</thead>
@@ -255,18 +271,18 @@
 											<td class="text-left">{{ products.product.name }}</td>
 											<td class="text-left">{{ products.product.packSize }}</td>
 											<td class="text-left">{{ products.quantity }}</td>
-											<td class="text-left">{{ products.unitTP }}</td>
+											<td class="text-left">{{ products.unitPrice }}</td>
 											<td>৳
 												{{
-													$helper.numberWithCommas((Number(products.quantity) * Number(products.unitTP)).toFixed(2))
+													$helper.numberWithCommas((Number(products.quantity) * Number(products.unitPrice)).toFixed(2))
 												}}
 											</td>
 										</tr>
 										<tr>
-											<td class="text-right text-bold" colspan="4">Total TP</td>
+											<td class="text-right text-bold" colspan="4">Total Price</td>
 											<td class="text-bold">৳
 												{{
-													$helper.numberWithCommas(purchaseDetails.totalAmount.toFixed(2))
+													$helper.numberWithCommas(purchaseDetails.totalPrice.toFixed(2))
 												}}
 											</td>
 										</tr>
@@ -284,7 +300,7 @@
 
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
-import {Loading, QSpinnerClock} from "quasar";
+import {Loading, QSpinnerClock, QSpinnerTail} from "quasar";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {ProductInterface} from "src/customs/interfaces/product.interface";
@@ -293,7 +309,7 @@ import {PurchaseInterface} from "src/customs/interfaces/purchase.interface";
 
 interface AddMoreInterface {
 	product: ProductInterface,
-	unitTP: number,
+	unitPrice: number,
 	quantity: number,
 }
 
@@ -302,14 +318,14 @@ export default class Purchase extends Vue {
 	tab = 'info'
 	detailsTab = 'product'
 
-	detailsDialogue: boolean = false
+	purchaseOptions: any[] = ['Cash', 'Credit'];
 
-	invDate: any = this.$helper.convertDate(new Date())
+	detailsDialogue: boolean = false
 
 	/***************** table ****************/
 	rows: any = [];
 	pagination: any = {
-		sortBy: 'purchaseDate',
+		sortBy: 'createdAt',
 		descending: false,
 		page: 1,
 		rowsPerPage: 15,
@@ -326,8 +342,14 @@ export default class Purchase extends Vue {
 			sortable: true,
 		},{
 			label: 'Total Amount',
-			name: 'totalAmount',
-			field: 'totalAmount',
+			name: 'totalPrice',
+			field: 'totalPrice',
+			align: 'left',
+			sortable: true
+		},{
+			label: 'Payment Type',
+			name: 'type',
+			field: 'type',
 			align: 'left',
 			sortable: true
 		},{
@@ -342,7 +364,8 @@ export default class Purchase extends Vue {
 	addDialog: boolean = false;
 	purchase: PurchaseInterface = {
 		purchaseDate: new Date().toISOString(),
-		totalAmount: 0,
+		totalPrice: 0,
+		type: '',
 		createPurchaseDetailsDto: []
 	}
 
@@ -358,11 +381,11 @@ export default class Purchase extends Vue {
 					packSize: '',
 				},
 				quantity: 0,
-				unitTP: 0,
+				unitPrice: 0,
 			}
 		],
 		purchaseDate: '',
-		totalAmount: 0,
+		totalPrice: 0,
 	}
 
 	productOptions: any[] = [];
@@ -370,11 +393,9 @@ export default class Purchase extends Vue {
 	preservedProducts: Array<AddMoreInterface> = [];
 
 	addMore: AddMoreInterface = {
-		product: {
-			id: '', name: '', packSize: ''
-		},
+		product: null,
 		quantity: null,
-		unitTP: null,
+		unitPrice: null,
 	}
 
 	openDetailsDialog(purchase: any) {
@@ -409,7 +430,7 @@ export default class Purchase extends Vue {
 			this.isLoading = true
 			this.rows = []
 			let url =
-					'invoice/pagination?page=' + this.pagination.page +
+					'purchase/pagination?page=' + this.pagination.page +
 					'&limit=' + this.pagination.rowsPerPage +
 					'&sort=' + this.pagination.sortBy +
 					'&order=' + (this.pagination.descending ? 'DESC' : 'ASC')
@@ -443,7 +464,7 @@ export default class Purchase extends Vue {
 
 	calculateTotal() {
 		if (this.addDialog) {
-			this.purchase.totalAmount = this.preservedProducts.reduce((acc, cur) => acc + ((cur.quantity * cur.unitTP)), 0)
+			this.purchase.totalPrice = this.preservedProducts.reduce((acc, cur) => acc + ((cur.quantity * cur.unitPrice)), 0)
 		}
 	}
 
@@ -452,7 +473,7 @@ export default class Purchase extends Vue {
 			product: {
 				id: '', name: '', packSize: ''
 			},
-			unitTP: null,
+			unitPrice: null,
 			quantity: null,
 		}
 	}
@@ -462,8 +483,8 @@ export default class Purchase extends Vue {
 		this.calculateTotal();
 	}
 
-	updateUnitTP(index: number, price: number) {
-		this.preservedProducts[index].unitTP = price;
+	updateUnitPrice(index: number, price: number) {
+		this.preservedProducts[index].unitPrice = price;
 		this.calculateTotal();
 	}
 
@@ -472,18 +493,18 @@ export default class Purchase extends Vue {
 		this.calculateTotal();
 	}
 
-	saveInvoice() {
+	savePurchase() {
 		this.purchase.createPurchaseDetailsDto = this.preservedProducts.map(m => {
 			return {
 				productID: m.product.id,
 				quantity: Number(m.quantity),
-				unitTP: Number(m.unitTP),
+				unitPrice: Number(m.unitPrice),
 			}
 		})
 
 		//@ts-ignore
 		Loading.show({spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey'})
-		this.$axios.post('invoice', this.purchase).then(response => {
+		this.$axios.post('purchase', this.purchase).then(response => {
 			if (!(response instanceof Error)) {
 				const res = response.data as AxiosResponseInterface
 				this.$q.notify({
@@ -500,9 +521,30 @@ export default class Purchase extends Vue {
 
 	closeAddDialog() {
 		this.addDialog = false;
-		this.purchase.totalAmount = 0
+		this.purchase.totalPrice = 0
 		this.purchase.createPurchaseDetailsDto = []
+		this.purchase.type = ''
 		this.preservedProducts = []
+	}
+
+	remove(id: string) {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerTail, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/purchase/${id}`
+		this.$axios.delete(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				if (res.payload.data.isDeleted) {
+					this.$q.notify({
+						message: res.message,
+						type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+					})
+					this.onFilter();
+				}
+			}
+		}).finally(() => {
+			Loading.hide()
+		})
 	}
 
 	/*************** filter ***************/

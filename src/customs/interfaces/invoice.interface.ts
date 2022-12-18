@@ -17,5 +17,8 @@ export interface InvoiceInterface {
 	others: number
 	totalProfit: number
 	platform: string
+	payment: string
+	paymentType: string
+	creditPeriod: Date | string
 	createInvoiceDetailsDto: invoiceDetailsInterface[]
 }

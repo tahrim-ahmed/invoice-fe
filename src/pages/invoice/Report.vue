@@ -5,7 +5,7 @@
 				<div class="col-12 q-px-md q-pt-md">
 					<q-table :columns="columns" :data="rows" :loading="isLoading" :pagination.sync="pagination"
 					         :style="'max-height: 88.5vh'" binary-state-sort card-class="full-width bg-card-theme"
-					         row-key="id" wrap-cells>
+					         row-key="id" wrap-cells @request="onRequest">
 						<template v-slot:no-data="{ icon, message, filter }">
 							<div class="text-overline full-width row justify-center q-py-xl">
 								<q-icon :name="filter ? 'filter_b_and_w' : icon" class="col-1" color="warning" size="2em"/>
@@ -17,6 +17,15 @@
 							<div class="q-table__control q-py-xs">
 								<q-btn color="primary" icon="add" label="Invoice" size="sm" @click="addDialog = true"/>
 							</div>
+							<q-btn color="primary" label="Select Order Date Range" class="q-ml-md q-my-xs col-md-3 col-3" size="sm" no-caps>
+								<q-menu v-model="show" anchor="bottom left" self="top left">
+									<q-date v-model="dates" @input="show = false" range minimal style="background: #d1ffff">
+										<div class="row justify-end q-pt-none q-mt-none">
+											<q-btn label="Clear Selection" color="primary" size="sm" @click="resetSelection" no-caps/>
+										</div>
+									</q-date>
+								</q-menu>
+							</q-btn>
 							<q-space/>
 							<q-input v-model="filter" autogrow color="black" debounce="1000" dense label="Search">
 								<template v-slot:append>
@@ -46,12 +55,8 @@
 									{{ props.row.client.code+' - '+props.row.client.name }}
 								</q-td>
 
-								<q-td class="q-px-sm cursor-pointer">
-									{{ props.row.client.cell }}
-								</q-td>
-
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas(props.row.totalTP) }}
+									{{ $helper.numberWithCommas(Number(Number(props.row.totalTP) + Number(props.row.others) + Number(props.row.totalCommission))) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
@@ -59,17 +64,26 @@
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas(props.row.totalCommission) }}
+									{{ $helper.numberWithCommas((Number(props.row.totalProfit).toFixed(2))) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer text-bold">
-									{{ $helper.numberWithCommas((Number(props.row.totalProfit).toFixed(2))) }}
+									{{ props.row.paymentType }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer text-bold">
+									<q-chip dense :color="props.row.payment === 'Paid' ? 'positive' : 'negative'"
+									        text-color="black" class="text-bold"
+									        :icon="props.row.payment === 'Paid' ? 'price_check' : 'block'">
+										{{ props.row.payment }}
+									</q-chip>
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
 									<q-icon class="cursor-pointer" color="dark" name="view_module" size="sm">
 										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate">
 											<q-list style="min-width: 100px">
+												<!--Details Dialog-->
 												<q-item clickable dense v-close-popup @click="openDetailsDialog(props.row)">
 													<q-item-section side>
 														<q-icon color="secondary" name="table_view" style="font-size: 15px"/>
@@ -79,7 +93,46 @@
 													</q-item-section>
 												</q-item>
 												<q-separator/>
-												<q-item clickable dense v-close-popup @click="">
+												<!--Payment Dialog-->
+												<q-item v-if="props.row.payment !== 'Paid'" clickable dense>
+													<q-item-section side>
+														<q-icon color="info" name="local_atm" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<div>Paid</div>
+														<q-menu anchor="bottom end" self="top left">
+															<q-list style="min-width: 100px" class="bg-accent text-white">
+																<q-item clickable>
+																	<q-item-section>
+																		<div>Full</div>
+																		<q-popup-proxy :breakpoint="700">
+																			<q-banner dense>
+																				<template v-slot:avatar>
+																					<q-icon color="info" name="local_atm"/>
+																				</template>
+																				Would you really like to mark this invoice as full paid?
+																				<template v-slot:action>
+																					<q-btn color="negative" glossy @click="paid(props.row.id)"
+																					       v-close-popup label="Yes" no-caps/>
+																					<q-btn v-close-popup color="secondary" glossy label="No" no-caps/>
+																				</template>
+																			</q-banner>
+																		</q-popup-proxy>
+																	</q-item-section>
+																</q-item>
+																<q-separator />
+																<q-item clickable @click="partialPayment(props.row)">
+																	<q-item-section>
+																		<div>Partial</div>
+																	</q-item-section>
+																</q-item>
+															</q-list>
+														</q-menu>
+													</q-item-section>
+												</q-item>
+												<q-separator/>
+												<!--Download-->
+												<q-item clickable dense v-close-popup @click="gotoPreview(props.row.id)">
 													<q-item-section side>
 														<q-icon color="positive" name="file_download" style="font-size: 15px"/>
 													</q-item-section>
@@ -88,6 +141,7 @@
 													</q-item-section>
 												</q-item>
 												<q-separator/>
+												<!--Print-->
 												<q-item clickable dense v-close-popup @click="">
 													<q-item-section side>
 														<q-icon color="primary" name="print" style="font-size: 15px"/>
@@ -97,6 +151,7 @@
 													</q-item-section>
 												</q-item>
 												<q-separator/>
+												<!--Delete-->
 												<q-item clickable dense>
 													<q-item-section side>
 														<q-icon color="negative" name="delete_forever" style="font-size: 15px"/>
@@ -110,10 +165,10 @@
 																</template>
 																Would you really like to delete invoice
 																<span class="text-bold text-negative">
-																{{props.row.invoiceNo}}
+																{{props.row.invoiceID}}
 																</span> for forever?
 																<template v-slot:action>
-																	<q-btn color="negative" glossy @click="remove(props.row._id)" v-close-popup> Yes</q-btn>
+																	<q-btn color="negative" glossy @click="remove(props.row.id)" v-close-popup> Yes</q-btn>
 																	<q-btn v-close-popup color="secondary" glossy> No</q-btn>
 																</template>
 															</q-banner>
@@ -157,7 +212,7 @@
 													                       class="col col-6" dense hide-bottom-space
 													                       label="Shipping Date"/>
 												</div>
-												<div class="col-12 col-md-12">
+												<div class="col-12 col-md-6">
 													<q-select v-model="invoice.clientID" :options="clientOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Client" map-options option-label="name"
 													          option-value="id" emit-value hide-bottom-space
@@ -182,7 +237,7 @@
 
 													</q-select>
 												</div>
-												<div class="col-12 col-md-12">
+												<div class="col-12 col-md-6">
 												<q-select v-model="addMore.product" :options="productOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Product" map-options option-label="name"
 													          use-input @filter="filterProductFn" outlined dense hide-bottom-space>
@@ -190,6 +245,16 @@
 															<q-item>
 																<q-item-section class="text-grey">
 																	No results
+																</q-item-section>
+															</q-item>
+														</template>
+
+														<template v-slot:option="scope">
+															<q-item v-bind="scope.itemProps" v-on="scope.itemEvents">
+																<q-item-section>
+																	<q-item-label>
+																		{{ scope.opt.name }} - {{ scope.opt.packSize }}
+																	</q-item-label>
 																</q-item-section>
 															</q-item>
 														</template>
@@ -213,11 +278,20 @@
 													<q-btn class="full-width" label="Add Que" color="primary" @click="addToQueue" no-caps/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
-													<q-select v-model="invoice.platform" :options="platformOptions" class="col col-4"
+													<q-select v-model="invoice.platform" :options="platformOptions" class="col col-4" clearable
 													          input-debounce="1000" label="Select Platform" outlined dense @change="calculateTotal"/>
 												</div>
 												<div class="col-12 col-md-6 q-pt-md">
 													<q-input v-model.number="invoice.others" type="number" label="Others Cost" outlined dense hide-bottom-space/>
+												</div>
+												<div class="col-12 col-md-grow q-pt-md">
+													<q-select v-model="invoice.paymentType" :options="paymentOptions" clearable
+													          input-debounce="1000" label="Payment Type" outlined dense/>
+												</div>
+												<div class="col-12 col-md-6 q-pt-md" v-if="invoice.paymentType === 'Credit'">
+													<date-picker-component v-model="invoice.creditPeriod" :dense="false"
+													                       class="col col-6" dense hide-bottom-space
+													                       label="Credit Period"/>
 												</div>
 											</div>
 											<div class="row justify-end q-pt-md">
@@ -369,6 +443,7 @@
 							<q-tabs class="q-pt-none" v-model="detailsTab" dense active-color="primary">
 								<q-tab name="client" label="Client Details"/>
 								<q-tab name="product" label="Invoice Details"/>
+								<q-tab name="payment" label="Payment Details"/>
 							</q-tabs>
 							<q-tab-panels v-model="detailsTab" class="bg-grey-1" animated>
 								<q-tab-panel name="client">
@@ -387,11 +462,14 @@
 								</q-tab-panel>
 								<q-tab-panel name="product">
 									<div class="row">
-										<div class="col-6">
-											Invoice No: {{ invoiceDetails.invoiceID }} <br>
+										<div :class="invoiceDetails.payment === 'Paid' ? 'col-6' : 'col-4'">
+											Order Date: {{ $helper.convertDate(invoiceDetails.orderDate) }} <br>
 										</div>
-										<div class="col-6">
-											Invoice Date: {{ $helper.convertDate(invoiceDetails.createdAt) }} <br>
+										<div :class="invoiceDetails.payment === 'Paid' ? 'col-6 text-right' : 'col-4 text-center'">
+											Shipping Date: {{ $helper.convertDate(invoiceDetails.shippingDate) }} <br>
+										</div>
+										<div class="col-4 text-right" v-if="invoiceDetails.payment !== 'Paid'">
+											Due Date: {{ $helper.convertDate(invoiceDetails.creditPeriod) }} <br>
 										</div>
 									</div>
 									<q-markup-table dense class="q-mt-md">
@@ -430,6 +508,14 @@
 											</td>
 										</tr>
 										<tr>
+											<td class="text-right text-bold" colspan="7">Total MRP</td>
+											<td class="text-bold">৳
+												{{
+													$helper.numberWithCommas(invoiceDetails.totalMRP.toFixed(2))
+												}}
+											</td>
+										</tr>
+										<tr>
 											<td class="text-right text-bold" colspan="7">Total TP</td>
 											<td class="text-bold">৳
 												{{
@@ -459,14 +545,6 @@
 											</td>
 										</tr>
 										<tr>
-											<td class="text-right text-bold" colspan="7">Total MRP</td>
-											<td class="text-bold">৳
-												{{
-													$helper.numberWithCommas(invoiceDetails.totalMRP.toFixed(2))
-												}}
-											</td>
-										</tr>
-										<tr>
 											<td class="text-right text-bold" colspan="7">
 												{{ Number(invoiceDetails.totalProfit) >= 0 ?
 													'Profit' : 'Loss' }}
@@ -480,7 +558,67 @@
 										</tbody>
 									</q-markup-table>
 								</q-tab-panel>
+								<q-tab-panel name="payment">
+									<div class="row">
+										<div class="col-6">
+											Invoice ID: {{ invoiceDetails.invoiceID }} <br>
+										</div>
+										<div class="col-6">
+											Creation Date: {{ $helper.convertDate(invoiceDetails.createdAt) }} <br>
+										</div>
+										<div class="col-6">
+											Payment Type: {{ invoiceDetails.paymentType }} <br>
+										</div>
+										<div class="col-6">
+											Payment Status: {{ invoiceDetails.payment }} <br>
+										</div>
+										<div class="col-6">
+											Paid Amount: {{ invoiceDetails.paidAmount }} <br>
+										</div>
+										<div class="col-6">
+											Due Amount: {{ Number(invoiceDetails.totalMRP) - Number(invoiceDetails.paidAmount) }} <br>
+										</div>
+									</div>
+								</q-tab-panel>
 							</q-tab-panels>
+						</q-card>
+					</q-dialog>
+
+					<!--	Payment Dialog	-->
+					<q-dialog v-model="paymentDialogue" persistent>
+						<q-card style="width: 400px; max-width: 80vw; max-height: 100vw;">
+							<q-bar class="bg-primary text-white">
+								<q-space />
+								<q-btn dense flat icon="close" @click="closePaymentDialog">
+									<q-tooltip>Close</q-tooltip>
+								</q-btn>
+							</q-bar>
+							<q-form greedy @submit.prevent="savePartialPayment">
+								<q-card-section class="q-pa-none q-ml-md q-mt-md text-bold">
+									Pay Amount
+								</q-card-section>
+								<q-card-section>
+									<div class="row q-col-gutter-md">
+										<div class="col-12 col-md-12 q-pt-md">
+											<q-input v-model.number="invoiceDetails.paidAmount" type="number" label="Already Paid" outlined dense
+											         hide-bottom-space disable/>
+										</div>
+										<div class="col-12 col-md-12 q-pt-md">
+											<q-input v-model.number="invoiceDetails.dueAmount" type="number" label="Due Amount" outlined dense
+											         hide-bottom-space disable/>
+										</div>
+										<div class="col-12 col-md-12 q-pt-md">
+											<q-input v-model.number="partialPay.amount" label="Pay Amount" outlined dense hide-bottom-space type="number"
+											         :rules="[val => !!val || '* Required',
+											         val => val <= Number(invoiceDetails.dueAmount) ||
+											         'Amount should be Less than or Equal to the due']"/>
+										</div>
+									</div>
+									<div class="row justify-end q-pt-md">
+										<q-btn color="primary" label="Submit" type="submit"/>
+									</div>
+								</q-card-section>
+							</q-form>
 						</q-card>
 					</q-dialog>
 				</div>
@@ -491,12 +629,13 @@
 
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
-import {Loading, QSpinnerClock} from "quasar";
+import {Loading, QSpinnerClock, QSpinnerTail} from "quasar";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
 import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {InvoiceInterface} from "src/customs/interfaces/invoice.interface";
 import {ProductInterface} from "src/customs/interfaces/product.interface";
 import DatePickerComponent from "src/components/date-picker/Date-picker.component.vue";
+import moment from "moment";
 
 interface AddMoreInterface {
 	product: ProductInterface,
@@ -512,8 +651,16 @@ export default class List extends Vue {
 	detailsTab = 'client'
 
 	detailsDialogue: boolean = false
+	paymentDialogue: boolean = false
 
 	invDate: any = this.$helper.convertDate(new Date())
+
+	show: boolean = false
+
+	dates: any = {
+		from: moment().startOf('year').toDate(),
+		to: moment().toDate()
+	}
 
 	/***************** table ****************/
 	rows: any = [];
@@ -540,38 +687,37 @@ export default class List extends Vue {
 			align: 'left',
 			sortable: true
 		},{
-			label: 'Client Code',
+			label: 'Client',
 			name: 'clientName',
 			field: 'name',
 			align: 'left',
 			sortable: true
 		},{
-			label: 'Contact No',
-			name: 'contact',
-			field: 'cell',
+			label: 'Total Cost',
+			name: 'totalCost',
+			field: 'totalCost',
 			align: 'left',
 			sortable: true
 		},{
-			label: 'Total TP',
-			name: 'totalTP',
-			field: 'totalTP',
+			label: 'Total Sold',
+			name: 'totalSold',
+			field: 'totalSold',
 			align: 'left',
 			sortable: true
-		},{
-			label: 'Total MRP',
-			name: 'totalMRP',
-			field: 'totalMRP',
-			align: 'left',
-			sortable: true
-		},{
-			label: 'Commission',
-			name: 'totalCommission',
-			field: 'totalCommission',
-			align: 'left',
 		},{
 			label: 'Profit',
 			name: 'totalProfit',
 			field: 'totalProfit',
+			align: 'left',
+		},{
+			label: 'Type',
+			name: 'paymentType',
+			field: 'paymentType',
+			align: 'left',
+		},{
+			label: 'Payment',
+			name: 'payment',
+			field: 'payment',
 			align: 'left',
 		},{
 			label: 'Action',
@@ -593,7 +739,18 @@ export default class List extends Vue {
 		others: 0,
 		totalProfit: 0,
 		platform: '',
+		payment: '',
+		paymentType: '',
+		creditPeriod: null,
 		createInvoiceDetailsDto: []
+	}
+
+	partialPay: {
+		id: string
+		amount: number
+	} = {
+		id:'',
+		amount: null
 	}
 
 	invoiceDetails: any = {
@@ -607,7 +764,9 @@ export default class List extends Vue {
 		},
 		createdAt: '',
 		createdBy: '',
+		creditPeriod: '',
 		deletedAt: '',
+		dueAmount: 0,
 		id: '',
 		invoiceDetails: [
 			{
@@ -622,8 +781,13 @@ export default class List extends Vue {
 			}
 		],
 		invoiceID: '',
+		orderDate: '',
 		others: 0,
+		paidAmount: 0,
+		payment: '',
+		paymentType: '',
 		platform: '',
+		shippingDate: '',
 		totalCommission: 0,
 		totalMRP: 0,
 		totalTP: 0,
@@ -635,13 +799,12 @@ export default class List extends Vue {
 	productOptions: any[] = [];
 	clientOptions: any[] = [];
 	platformOptions: any[] = ['Daraz', 'Facebook', 'Offline'];
+	paymentOptions: any[] = ['Cash', 'Credit'];
 
 	preservedProducts: Array<AddMoreInterface> = [];
 
 	addMore: AddMoreInterface = {
-		product: {
-			id: '', name: '', packSize: ''
-		},
+		product: null,
 		quantity: null,
 		unitTP: null,
 		unitMRP: null,
@@ -652,12 +815,19 @@ export default class List extends Vue {
 		Object.keys(this.invoiceDetails).forEach((key: any) => {
 			this.invoiceDetails[key] = invoice[key] || '';
 		})
+		this.invoiceDetails.dueAmount = Number(invoice.totalMRP) - Number(invoice.paidAmount);
 		this.detailsDialogue = true;
 	}
 
 	closeDetailsDialog() {
 		this.detailsDialogue = false;
 		this.detailsTab = 'client';
+	}
+
+	closePaymentDialog() {
+		this.paymentDialogue = false;
+		this.partialPay.id = '';
+		this.partialPay.amount = null;
 	}
 
 	@Watch('invoice.clientID')
@@ -673,6 +843,7 @@ export default class List extends Vue {
 	}
 
 	@Watch('filter', { immediate: true })
+	@Watch('dates', { immediate: true })
 	onFilter() {
 		this.onRequest({
 			pagination: this.pagination
@@ -691,6 +862,7 @@ export default class List extends Vue {
 					'&sort=' + this.pagination.sortBy +
 					'&order=' + (this.pagination.descending ? 'DESC' : 'ASC')
 			if (this.filter) url += '&search=' + this.filter
+			url += '&startDate=' + this.dates.from + '&endDate=' + this.dates.to
 			this.$axios.get(url).then(async (response) => {
 				if (!(response instanceof Error)) {
 					const res = response.data as AxiosResponseInterface
@@ -730,9 +902,7 @@ export default class List extends Vue {
 
 	resetAddMore() {
 		this.addMore = {
-			product: {
-				id: '', name: '', packSize: ''
-			},
+			product: null,
 			unitTP: null,
 			unitMRP: null,
 			quantity: null,
@@ -775,6 +945,9 @@ export default class List extends Vue {
 				discount: Number(m.discount),
 			}
 		})
+
+		this.invoice.paymentType === 'Cash' ? this.invoice.payment = 'Paid' : this.invoice.payment = 'Unpaid'
+
 		if (this.invoice.platform === 'Daraz') {
 			this.invoice.totalCommission = Number((12 * Number(this.invoice.totalMRP)) / 100)
 
@@ -813,8 +986,86 @@ export default class List extends Vue {
 		this.invoice.others = 0
 		this.invoice.platform = ''
 		this.invoice.createInvoiceDetailsDto = []
+		this.invoice.payment = ''
+		this.invoice.paymentType = ''
+		this.invoice.creditPeriod = null
 		this.preservedProducts = []
 		this.currentClient = {}
+	}
+
+	resetSelection() {
+		this.dates.from = moment().startOf('year').toDate()
+		this.dates.to = moment().toDate()
+		this.onFilter()
+	}
+
+	partialPayment(payment: any) {
+		Object.keys(this.invoiceDetails).forEach((key: any) => {
+			this.invoiceDetails[key] = payment[key] || '';
+		})
+		this.invoiceDetails.dueAmount = Number(payment.totalMRP) - Number(payment.paidAmount);
+		this.partialPay.id = payment.id;
+		this.paymentDialogue = true
+	}
+
+	paid(id: string) {
+		//@ts-ignore
+		Loading.show({ spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey' })
+		const url = `/invoice/paid/${id}`
+		this.$axios.patch(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				this.$q.notify({
+					message: res.message,
+					type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+				})
+				this.onFilter()
+			}
+		}).finally(() => {
+			Loading.hide()
+		})
+	}
+
+	savePartialPayment() {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey'})
+		this.$axios.patch('invoice/partial-pay', this.partialPay).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				this.$q.notify({
+					message: res.message,
+					type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+				})
+				this.onFilter()
+			}
+		}).finally(() => {
+			this.closePaymentDialog();
+			Loading.hide()
+		})
+	}
+
+	remove(id: string) {
+		//@ts-ignore
+		Loading.show({spinner: QSpinnerTail, spinnerSize: '5rem', backgroundColor: 'grey'})
+		const url = `/invoice/${id}`
+		this.$axios.delete(url).then(response => {
+			if (!(response instanceof Error)) {
+				const res = response.data as AxiosResponseInterface
+				if (res.payload.data.isDeleted) {
+					this.$q.notify({
+						message: res.message,
+						type: res.status === ResponseStatusEnum.SUCCESS ? 'positive' : 'negative'
+					})
+					this.onFilter();
+				}
+			}
+		}).finally(() => {
+			Loading.hide()
+		})
+	}
+
+	gotoPreview(id: string) {
+		window.open('preview?id='+id)
 	}
 
 	/*************** filter ***************/

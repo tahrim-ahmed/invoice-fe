@@ -1,12 +1,13 @@
 interface purchaseDetailsInterface {
 	productID: string
-	unitTP: number
+	unitPrice: number
 	quantity: number
 }
 
 export interface PurchaseInterface {
 	id?: string
 	purchaseDate: Date | string
-	totalAmount: number
+	totalPrice: number
+	type: string
 	createPurchaseDetailsDto: purchaseDetailsInterface[]
 }

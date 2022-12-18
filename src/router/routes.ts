@@ -7,6 +7,11 @@ const routes: RouteConfig[] = [
 		component: () => import('pages/auth/Login.vue')
 	},
 	{
+		path: '/preview',
+		name: 'preview',
+		component: () => import('pages/invoice-download/Preview.vue')
+	},
+	{
 		path: '/',
 		component: () => import('layouts/MainLayout.vue'),
 		children: [
@@ -34,6 +39,11 @@ const routes: RouteConfig[] = [
 				path: 'invoice',
 				name: 'report',
 				component: () => import('pages/invoice/Report.vue')
+			},
+			{
+				path: 'statements',
+				name: 'statements',
+				component: () => import('pages/statement/Statement.vue')
 			},
 			{
 				path: 'users',

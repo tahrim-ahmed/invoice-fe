@@ -15,7 +15,9 @@
 
 						<template v-slot:top>
 							<div class="q-table__control q-py-xs">
-								<q-btn color="primary" icon="add" label="Product" size="sm" @click="addDialog = true"/>
+								<q-btn color="primary" icon="add" label="Deposited" size="sm" @click="addDialog = true">
+									<q-tooltip>Cash / Cheque Deposited to BAYER</q-tooltip>
+								</q-btn>
 							</div>
 							<q-space/>
 							<q-input v-model="filter" autogrow color="black" debounce="1000" dense label="Search">
@@ -35,23 +37,28 @@
 							<q-tr :props="props">
 
 								<q-td class="q-px-sm cursor-pointer">
-									{{ props.row.name }}
+									{{ $helper.convertDate(props.row.createdAt) }}
 								</q-td>
 
 								<q-td class="q-px-sm cursor-pointer">
-									{{ props.row.packSize }}
+									{{ props.row.purpose }}
+								</q-td>
+
+								<q-td class="q-px-sm cursor-pointer">
+									{{ $helper.numberWithCommas(props.row.amount) }}
 								</q-td>
 
 								<q-td class="q-px-sm text-center">
 									<q-icon class="cursor-pointer" color="dark" name="view_module" size="sm">
-										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate">
+										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate"
+										        v-if="props.row.purpose === 'Paid to BAYER'">
 											<q-list style="min-width: 100px">
 												<q-item clickable dense v-close-popup @click="openUpdateDialog(props.row)">
 													<q-item-section side>
 														<q-icon color="secondary" name="edit" style="font-size: 15px"/>
 													</q-item-section>
 													<q-item-section>
-														<q-item-label style="font-size: 15px">Update</q-item-label>
+														<q-item-label style="font-size: 15px">Edit</q-item-label>
 													</q-item-section>
 												</q-item>
 												<q-separator/>
@@ -66,10 +73,7 @@
 																<template v-slot:avatar>
 																	<q-icon color="negative" name="delete_forever"/>
 																</template>
-																Would you really like to delete product
-																<span class="text-bold text-negative">
-																{{ props.row.name }}
-																</span> for forever?
+																Would you really like to delete this statement for forever?
 																<template v-slot:action>
 																	<q-btn color="negative" glossy @click="remove(props.row.id)" v-close-popup> Yes</q-btn>
 																	<q-btn v-close-popup color="secondary" glossy> No</q-btn>
@@ -80,13 +84,26 @@
 												</q-item>
 											</q-list>
 										</q-menu>
+										<q-menu anchor="bottom left" fit self="top left" transition-hide="rotate" transition-show="rotate"
+										        v-else>
+											<q-list style="min-width: 100px">
+												<q-item clickable dense>
+													<q-item-section side>
+														<q-icon color="negative" name="block" style="font-size: 15px"/>
+													</q-item-section>
+													<q-item-section>
+														<q-item-label style="font-size: 15px">No Action</q-item-label>
+													</q-item-section>
+												</q-item>
+											</q-list>
+										</q-menu>
 									</q-icon>
 								</q-td>
 							</q-tr>
 						</template>
 					</q-table>
 
-					<!--	Add Product  -->
+					<!--	Add Statement  -->
 					<q-dialog v-model="addDialog" persistent>
 						<q-card>
 							<q-bar class="bg-primary text-white">
@@ -96,18 +113,15 @@
 								</q-btn>
 							</q-bar>
 							<q-tabs class="q-pt-none" v-model="tab" dense active-color="primary">
-								<q-tab name="info" label="Add Product Info"/>
+								<q-tab name="info" label="Add Statement Info"/>
 							</q-tabs>
 							<q-tab-panels v-model="tab" class="bg-grey-1" animated>
 								<q-tab-panel name="info">
-									<q-form greedy @submit.prevent="saveProduct">
+									<q-form greedy @submit.prevent="saveStatement">
 										<q-card-section>
 											<div class="row q-col-gutter-md">
 												<div class="col-12 col-md-12 q-pt-md">
-													<q-input v-model="product.name" label="Product Name" outlined dense/>
-												</div>
-												<div class="col-12 col-md-12 q-pt-md">
-													<q-input v-model="product.packSize" label="Pack Size" outlined dense/>
+													<q-input v-model.number="statement.amount" type="number" label="Deposited Amount" outlined dense/>
 												</div>
 											</div>
 											<div class="row justify-end q-pt-md">
@@ -120,7 +134,7 @@
 						</q-card>
 					</q-dialog>
 
-					<!--	Edit Product  -->
+					<!--	Edit Statement  -->
 					<q-dialog v-model="updateDialog" persistent>
 						<q-card>
 							<q-bar class="bg-primary text-white">
@@ -130,7 +144,7 @@
 								</q-btn>
 							</q-bar>
 							<q-tabs class="q-pt-none" v-model="tab" dense active-color="primary">
-								<q-tab name="info" label="Update Product Info"/>
+								<q-tab name="info" label="Update Statement Info"/>
 							</q-tabs>
 							<q-tab-panels v-model="tab" class="bg-grey-1" animated>
 								<q-tab-panel name="info">
@@ -138,10 +152,8 @@
 										<q-card-section>
 											<div class="row q-col-gutter-md">
 												<div class="col-12 col-md-12 q-pt-md">
-													<q-input v-model="updateProduct.name" label="Product Name" outlined dense/>
-												</div>
-												<div class="col-12 col-md-12 q-pt-md">
-													<q-input v-model="updateProduct.packSize" label="Pack Size" outlined dense/>
+													<q-input v-model.number="updateStatement.amount" type="number" label="Deposited Amount" outlined
+													         dense/>
 												</div>
 											</div>
 											<div class="row justify-end q-pt-md">
@@ -162,18 +174,18 @@
 <script lang="ts">
 import {Component, Vue, Watch} from 'vue-property-decorator';
 import {Loading, QSpinnerClock, QSpinnerDots, QSpinnerTail} from "quasar";
-import {ProductInterface} from "src/customs/interfaces/product.interface";
-import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
+import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
+import {StatementInterface} from "src/customs/interfaces/statement.interface";
 
 @Component({})
-export default class Products extends Vue {
+export default class List extends Vue {
 	tab = 'info'
 
 	/***************** table ****************/
 	rows: any = [];
 	pagination: any = {
-		sortBy: 'name',
+		sortBy: 'code',
 		descending: false,
 		page: 1,
 		rowsPerPage: 15,
@@ -183,15 +195,21 @@ export default class Products extends Vue {
 	filter: string = ''
 	columns: any = [
 		{
-			label: 'Product Name',
-			name: 'name',
-			field: 'name',
+			label: 'Date',
+			name: 'date',
+			field: 'createdAt',
 			align: 'left',
 			sortable: true
 		},{
-			label: 'Pack Size',
-			name: 'packSize',
-			field: 'packSize',
+			label: 'Statements',
+			name: 'purpose',
+			field: 'purpose',
+			align: 'left',
+			sortable: true
+		},{
+			label: 'Amount',
+			name: 'amount',
+			field: 'amount',
 			align: 'left',
 			sortable: true
 		},{
@@ -204,22 +222,33 @@ export default class Products extends Vue {
 	]
 	/*************** add ***************/
 	addDialog: boolean = false;
-	product: ProductInterface = {
-		name: '',
-		packSize: ''
+	statement: StatementInterface = {
+		purpose: 'Paid to BAYER',
+		amount: null,
 	}
 	/************* update ***************/
 	updateDialog: boolean = false;
-	updateProduct: ProductInterface = {
+	updateStatement: StatementInterface = {
 		id: '',
-		name: '',
-		packSize: ''
+		purpose: '',
+		amount: null,
+	}
+
+	openUpdateDialog(statement: any) {
+		this.updateStatement.id = statement.id;
+		this.updateStatement.purpose = statement.purpose;
+		this.updateStatement.amount = statement.amount;
+		this.updateDialog = true;
 	}
 
 	created() {
 		this.onRequest({
 			pagination: this.pagination
 		})
+	}
+
+	report() {
+
 	}
 
 	@Watch('filter', {immediate: true})
@@ -229,19 +258,12 @@ export default class Products extends Vue {
 		})
 	}
 
-	openUpdateDialog(product: any) {
-		this.updateProduct.id = product.id;
-		this.updateProduct.name = product.name;
-		this.updateProduct.packSize = product.packSize;
-		this.updateDialog = true;
-	}
-
 	onRequest({pagination}: any = {}) {
 		if (pagination) {
 			this.pagination = pagination
 		}
 
-		let url = 'product/pagination?page=' + this.pagination.page +
+		let url = 'statement/pagination?page=' + this.pagination.page +
 				'&limit=' + this.pagination.rowsPerPage
 
 		this.$axios.get(url).then(async (response) => {
@@ -265,10 +287,10 @@ export default class Products extends Vue {
 		})
 	}
 
-	saveProduct() {
+	saveStatement() {
 		//@ts-ignore
 		Loading.show({spinner: QSpinnerClock, spinnerSize: '5rem', backgroundColor: 'grey'})
-		this.$axios.post('product', this.product).then(response => {
+		this.$axios.post('statement', this.statement).then(response => {
 			if (!(response instanceof Error)) {
 				const res = response.data as AxiosResponseInterface
 				this.$q.notify({
@@ -285,24 +307,22 @@ export default class Products extends Vue {
 
 	closeAddDialog() {
 		this.addDialog = false;
-		this.product.name = ''
-		this.product.packSize = ''
-
+		this.statement.purpose = 'Paid to BAYER';
+		this.statement.amount = null;
 	}
 
 	closeUpdateDialog() {
 		this.updateDialog = false;
-		this.updateProduct.id = ''
-		this.updateProduct.name = ''
-		this.updateProduct.packSize = ''
+		this.updateStatement.purpose = '';
+		this.updateStatement.amount = null;
 	}
 
 	saveUpdate() {
 		//@ts-ignore
 		Loading.show({spinner: QSpinnerDots, spinnerSize: '5rem', backgroundColor: 'grey'})
-		const url = `/product/${this.updateProduct.id}`
-		delete this.updateProduct.id;
-		this.$axios.put(url, this.updateProduct).then(response => {
+		const url = `/statement/${this.updateStatement.id}`
+		delete this.updateStatement.id;
+		this.$axios.put(url, this.updateStatement).then(response => {
 			if (!(response instanceof Error)) {
 				const res = response.data as AxiosResponseInterface
 				this.$q.notify({
@@ -320,7 +340,7 @@ export default class Products extends Vue {
 	remove(id: string) {
 		//@ts-ignore
 		Loading.show({spinner: QSpinnerTail, spinnerSize: '5rem', backgroundColor: 'grey'})
-		const url = `/product/${id}`
+		const url = `/statement/${id}`
 		this.$axios.delete(url).then(response => {
 			if (!(response instanceof Error)) {
 				const res = response.data as AxiosResponseInterface

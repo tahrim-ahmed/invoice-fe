@@ -5,7 +5,7 @@
 				<div class="col-12 q-px-md q-pt-md">
 					<q-table :columns="columns" :data="rows" :loading="isLoading" :pagination.sync="pagination"
 					         :style="'max-height: 88.5vh'" binary-state-sort card-class="full-width bg-card-theme"
-					         row-key="id" wrap-cells>
+					         row-key="id" wrap-cells @request="onRequest">
 						<template v-slot:no-data="{ icon, message, filter }">
 							<div class="text-overline full-width row justify-center q-py-xl">
 								<q-icon :name="filter ? 'filter_b_and_w' : icon" class="col-1" color="warning" size="2em"/>
@@ -231,6 +231,8 @@
 import {Component, Vue, Watch} from 'vue-property-decorator';
 import {Loading, QSpinnerBox, QSpinnerComment} from "quasar";
 import {UserInterface} from "src/customs/interfaces/user.interface";
+import {AxiosResponseInterface} from "src/customs/interfaces/axios-response.interface";
+import {ResponseStatusEnum} from "src/customs/enum/response-status.enum";
 
 @Component({})
 export default class Users extends Vue {
@@ -239,7 +241,7 @@ export default class Users extends Vue {
 	/***************** table ****************/
 	rows: any = [];
 	pagination: any = {
-		sortBy: 'code',
+		sortBy: 'firstName',
 		descending: false,
 		page: 1,
 		rowsPerPage: 15,
@@ -310,19 +312,38 @@ export default class Users extends Vue {
 		})
 	}
 
-	onRequest({pagination}: any = {}) {
-		if (pagination) {
-			this.pagination = pagination
+	onRequest({ pagination }: any = {}) {
+		if (!this.isLoading) {
+			if (pagination) {
+				this.pagination = pagination
+			}
+			this.isLoading = true
+			this.rows = []
+			let url =
+					'users/pagination?page=' + this.pagination.page +
+					'&limit=' + this.pagination.rowsPerPage +
+					'&sort=' + this.pagination.sortBy +
+					'&order=' + (this.pagination.descending ? 'DESC' : 'ASC')
+			if (this.filter) url += '&search=' + this.filter
+			this.$axios.get(url).then(async (response) => {
+				if (!(response instanceof Error)) {
+					const res = response.data as AxiosResponseInterface
+					if (res.error) {
+						this.$q.notify({
+							message: res.message,
+							type: 'negative'
+						})
+					} else {
+						if (res.status === ResponseStatusEnum.SUCCESS) {
+							this.rows = res?.page?.data || []
+							this.pagination.rowsNumber = res.page.count
+						}
+					}
+				}
+			}).finally(() => {
+				this.isLoading = false;
+			})
 		}
-
-		let url = 'user/pagination?page=' + this.pagination.page +
-				'&limit=' + this.pagination.rowsPerPage
-
-		this.$axios.get(url).then(value => {
-			this.rows = value.data
-		}).finally(() => {
-			this.isLoading = false
-		})
 	}
 
 	saveUser() {
